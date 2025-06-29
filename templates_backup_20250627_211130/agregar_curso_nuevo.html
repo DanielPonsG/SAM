@@ -1,0 +1,449 @@
+{% extends "index_master.html" %}
+
+{% block content %}
+<div class="right_col" role="main">
+  <div class="container-fluid">
+    <!-- Header -->
+    <div class="row mb-4">
+      <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center">
+          <div>
+            <h2 class="fw-bold text-dark mb-1">
+              <i class="fas fa-graduation-cap text-primary me-2"></i>Crear Nuevo Curso
+            </h2>
+            <p class="text-muted mb-0">Sistema escolar chileno - Cursos de 1° a 4° Medio</p>
+          </div>
+          <div>
+            <a href="{% url 'listar_cursos' %}" class="btn btn-outline-secondary">
+              <i class="fas fa-arrow-left me-1"></i>Volver al listado
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Mensajes -->
+    {% if messages %}
+      {% for message in messages %}
+        <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+          <i class="fas fa-{% if message.tags == 'success' %}check-circle{% elif message.tags == 'error' %}exclamation-triangle{% else %}info-circle{% endif %} me-2"></i>
+          {{ message }}
+          <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+      {% endfor %}
+    {% endif %}
+
+    <!-- Formulario Principal -->
+    <div class="row">
+      <div class="col-lg-8">
+        <div class="card border-0 shadow-sm">
+          <div class="card-header bg-primary text-white">
+            <h5 class="mb-0">
+              <i class="fas fa-info-circle me-2"></i>Información del Curso
+            </h5>
+          </div>
+          <div class="card-body p-4">
+            <form method="post" novalidate>
+              {% csrf_token %}
+              
+              <!-- Información básica del curso -->
+              <div class="row">
+                <div class="col-md-4 mb-3">
+                  <label for="{{ form.nivel.id_for_label }}" class="form-label fw-bold">
+                    <i class="fas fa-layer-group text-primary me-1"></i>{{ form.nivel.label }}
+                  </label>
+                  {{ form.nivel }}
+                  {% if form.nivel.errors %}
+                    <div class="text-danger small mt-1">
+                      {% for error in form.nivel.errors %}
+                        <div><i class="fas fa-exclamation-circle me-1"></i>{{ error }}</div>
+                      {% endfor %}
+                    </div>
+                  {% endif %}
+                </div>
+                
+                <div class="col-md-4 mb-3">
+                  <label for="{{ form.paralelo.id_for_label }}" class="form-label fw-bold">
+                    <i class="fas fa-clone text-success me-1"></i>{{ form.paralelo.label }}
+                  </label>
+                  {{ form.paralelo }}
+                  {% if form.paralelo.errors %}
+                    <div class="text-danger small mt-1">
+                      {% for error in form.paralelo.errors %}
+                        <div><i class="fas fa-exclamation-circle me-1"></i>{{ error }}</div>
+                      {% endfor %}
+                    </div>
+                  {% endif %}
+                </div>
+                
+                <div class="col-md-4 mb-3">
+                  <label for="{{ form.anio.id_for_label }}" class="form-label fw-bold">
+                    <i class="fas fa-calendar-alt text-warning me-1"></i>{{ form.anio.label }}
+                  </label>
+                  {{ form.anio }}
+                  {% if form.anio.errors %}
+                    <div class="text-danger small mt-1">
+                      {% for error in form.anio.errors %}
+                        <div><i class="fas fa-exclamation-circle me-1"></i>{{ error }}</div>
+                      {% endfor %}
+                    </div>
+                  {% endif %}
+                </div>
+              </div>
+
+              <!-- Vista previa del curso -->
+              <div class="alert alert-light border-primary border-2 mb-4">
+                <div class="d-flex align-items-center">
+                  <div class="badge bg-primary fs-5 me-3" style="min-width: 80px;">
+                    <span id="preview-curso">Seleccionar</span>
+                  </div>
+                  <div>
+                    <strong>Vista previa del curso</strong>
+                    <p class="mb-0 small text-muted">Este será el nombre del curso que se creará</p>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Profesor Jefe -->
+              <div class="mb-4">
+                <label for="{{ form.profesor_jefe.id_for_label }}" class="form-label fw-bold">
+                  <i class="fas fa-chalkboard-teacher text-info me-1"></i>{{ form.profesor_jefe.label }}
+                </label>
+                {{ form.profesor_jefe }}
+                {% if form.profesor_jefe.errors %}
+                  <div class="text-danger small mt-1">
+                    {% for error in form.profesor_jefe.errors %}
+                      <div><i class="fas fa-exclamation-circle me-1"></i>{{ error }}</div>
+                    {% endfor %}
+                  </div>
+                {% endif %}
+                <div class="form-text">
+                  <i class="fas fa-info-circle me-1"></i>El profesor jefe es quien tendrá la responsabilidad principal del curso
+                </div>
+              </div>
+
+              <!-- Asignaturas -->
+              <div class="mb-4">
+                <label for="{{ form.asignaturas.id_for_label }}" class="form-label fw-bold">
+                  <i class="fas fa-book text-success me-1"></i>{{ form.asignaturas.label }}
+                </label>
+                <div class="row">
+                  <div class="col-md-8">
+                    {{ form.asignaturas }}
+                    {% if form.asignaturas.help_text %}
+                      <div class="form-text">{{ form.asignaturas.help_text }}</div>
+                    {% endif %}
+                    {% if form.asignaturas.errors %}
+                      <div class="text-danger small mt-1">
+                        {% for error in form.asignaturas.errors %}
+                          <div><i class="fas fa-exclamation-circle me-1"></i>{{ error }}</div>
+                        {% endfor %}
+                      </div>
+                    {% endif %}
+                  </div>
+                  <div class="col-md-4">
+                    <div class="d-grid gap-2">
+                      <button type="button" class="btn btn-outline-primary btn-sm" onclick="selectAllSubjects()">
+                        <i class="fas fa-check-square me-1"></i>Seleccionar Todas
+                      </button>
+                      <button type="button" class="btn btn-outline-secondary btn-sm" onclick="clearAllSubjects()">
+                        <i class="fas fa-square me-1"></i>Limpiar Selección
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Nueva Asignatura -->
+              <div class="mb-4">
+                <label for="{{ form.nueva_asignatura.id_for_label }}" class="form-label fw-bold">
+                  <i class="fas fa-plus-circle text-success me-1"></i>{{ form.nueva_asignatura.label }}
+                </label>
+                {{ form.nueva_asignatura }}
+                {% if form.nueva_asignatura.help_text %}
+                  <div class="form-text text-success">
+                    <i class="fas fa-lightbulb me-1"></i>{{ form.nueva_asignatura.help_text }}
+                  </div>
+                {% endif %}
+                {% if form.nueva_asignatura.errors %}
+                  <div class="text-danger small mt-1">
+                    {% for error in form.nueva_asignatura.errors %}
+                      <div><i class="fas fa-exclamation-circle me-1"></i>{{ error }}</div>
+                    {% endfor %}
+                  </div>
+                {% endif %}
+              </div>
+
+              <!-- Estudiantes -->
+              <div class="mb-4">
+                <label for="{{ form.estudiantes.id_for_label }}" class="form-label fw-bold">
+                  <i class="fas fa-user-graduate text-primary me-1"></i>{{ form.estudiantes.label }}
+                </label>
+                <div class="row">
+                  <div class="col-md-8">
+                    {{ form.estudiantes }}
+                    {% if form.estudiantes.help_text %}
+                      <div class="form-text">{{ form.estudiantes.help_text }}</div>
+                    {% endif %}
+                    {% if form.estudiantes.errors %}
+                      <div class="text-danger small mt-1">
+                        {% for error in form.estudiantes.errors %}
+                          <div><i class="fas fa-exclamation-circle me-1"></i>{{ error }}</div>
+                        {% endfor %}
+                      </div>
+                    {% endif %}
+                  </div>
+                  <div class="col-md-4">
+                    <div class="d-grid gap-2">
+                      <button type="button" class="btn btn-outline-primary btn-sm" onclick="selectAllStudents()">
+                        <i class="fas fa-check-square me-1"></i>Seleccionar Todos
+                      </button>
+                      <button type="button" class="btn btn-outline-secondary btn-sm" onclick="clearAllStudents()">
+                        <i class="fas fa-square me-1"></i>Limpiar Selección
+                      </button>
+                      <div class="alert alert-info small mt-2 mb-0">
+                        <strong>Contador:</strong> <span id="selected-count">0</span> seleccionados
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Validación de formulario -->
+              {% if form.non_field_errors %}
+                <div class="alert alert-danger">
+                  {% for error in form.non_field_errors %}
+                    <div><i class="fas fa-exclamation-triangle me-1"></i>{{ error }}</div>
+                  {% endfor %}
+                </div>
+              {% endif %}
+
+              <!-- Botones -->
+              <div class="d-flex justify-content-end gap-2 mt-4">
+                <a href="{% url 'listar_cursos' %}" class="btn btn-outline-secondary">
+                  <i class="fas fa-times me-1"></i>Cancelar
+                </a>
+                <button type="submit" class="btn btn-success btn-lg">
+                  <i class="fas fa-save me-1"></i>Crear Curso
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+
+      <!-- Panel lateral con información -->
+      <div class="col-lg-4">
+        <div class="card border-0 shadow-sm mb-3">
+          <div class="card-header bg-info text-white">
+            <h6 class="mb-0">
+              <i class="fas fa-chart-bar me-2"></i>Estadísticas del Sistema
+            </h6>
+          </div>
+          <div class="card-body">
+            <div class="row text-center">
+              <div class="col-4">
+                <div class="badge bg-primary fs-6 mb-1">{{ total_estudiantes }}</div>
+                <p class="mb-0 small">Estudiantes</p>
+              </div>
+              <div class="col-4">
+                <div class="badge bg-success fs-6 mb-1">{{ total_asignaturas }}</div>
+                <p class="mb-0 small">Asignaturas</p>
+              </div>
+              <div class="col-4">
+                <div class="badge bg-info fs-6 mb-1">{{ total_profesores }}</div>
+                <p class="mb-0 small">Profesores</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card border-0 shadow-sm">
+          <div class="card-header bg-warning text-dark">
+            <h6 class="mb-0">
+              <i class="fas fa-lightbulb me-2"></i>Consejos Útiles
+            </h6>
+          </div>
+          <div class="card-body">
+            <ul class="list-unstyled mb-0">
+              <li class="mb-2">
+                <i class="fas fa-check-circle text-success me-2"></i>
+                <small>Los cursos siguen el formato chileno: 1°A, 2°B, etc.</small>
+              </li>
+              <li class="mb-2">
+                <i class="fas fa-check-circle text-success me-2"></i>
+                <small>El profesor jefe es opcional pero recomendado</small>
+              </li>
+              <li class="mb-2">
+                <i class="fas fa-check-circle text-success me-2"></i>
+                <small>Puedes asignar estudiantes y asignaturas después</small>
+              </li>
+              <li class="mb-0">
+                <i class="fas fa-check-circle text-success me-2"></i>
+                <small>Usa Ctrl+Click para seleccionar múltiples elementos</small>
+              </li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Estilos personalizados -->
+<style>
+  .form-select:focus,
+  .form-control:focus {
+    border-color: #0d6efd;
+    box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.25);
+  }
+  
+  .card {
+    border-radius: 12px;
+    transition: all 0.3s ease;
+  }
+  
+  .card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(0,0,0,0.15) !important;
+  }
+  
+  .btn {
+    border-radius: 8px;
+    transition: all 0.3s ease;
+  }
+  
+  .form-select[multiple] option:checked {
+    background-color: #0d6efd;
+    color: white;
+  }
+  
+  .curso-estudiantes option {
+    padding: 8px 12px;
+    border-bottom: 1px solid #eee;
+  }
+  
+  .curso-asignaturas option {
+    padding: 6px 12px;
+    border-bottom: 1px solid #eee;
+  }
+  
+  .badge {
+    font-size: 1rem !important;
+    padding: 0.5rem 1rem;
+  }
+  
+  #preview-curso {
+    min-width: 80px;
+    font-size: 1.1rem;
+    font-weight: bold;
+  }
+</style>
+
+<!-- JavaScript mejorado -->
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    const nivelSelect = document.getElementById('id_nivel');
+    const paraleloSelect = document.getElementById('id_paralelo');
+    const anioInput = document.getElementById('id_anio');
+    const previewElement = document.getElementById('preview-curso');
+    const estudiantesSelect = document.getElementById('id_estudiantes');
+    const selectedCountElement = document.getElementById('selected-count');
+
+    // Función para actualizar la vista previa del curso
+    function updatePreview() {
+      const nivel = nivelSelect.value;
+      const paralelo = paraleloSelect.value;
+      const anio = anioInput.value || new Date().getFullYear();
+      
+      if (nivel && paralelo) {
+        const nivelText = nivelSelect.options[nivelSelect.selectedIndex].text;
+        previewElement.textContent = nivelText + paralelo;
+        previewElement.parentElement.classList.remove('bg-secondary');
+        previewElement.parentElement.classList.add('bg-primary');
+      } else {
+        previewElement.textContent = 'Seleccionar';
+        previewElement.parentElement.classList.remove('bg-primary');
+        previewElement.parentElement.classList.add('bg-secondary');
+      }
+    }
+
+    // Función para actualizar el contador de estudiantes seleccionados
+    function updateSelectedCount() {
+      const selectedOptions = Array.from(estudiantesSelect.selectedOptions);
+      selectedCountElement.textContent = selectedOptions.length;
+    }
+
+    // Event listeners
+    nivelSelect.addEventListener('change', updatePreview);
+    paraleloSelect.addEventListener('change', updatePreview);
+    anioInput.addEventListener('input', updatePreview);
+    estudiantesSelect.addEventListener('change', updateSelectedCount);
+
+    // Inicializar
+    updatePreview();
+    updateSelectedCount();
+
+    // Validación del formulario
+    const form = document.querySelector('form');
+    form.addEventListener('submit', function(e) {
+      const nivel = nivelSelect.value;
+      const paralelo = paraleloSelect.value;
+      
+      if (!nivel) {
+        e.preventDefault();
+        alert('Por favor selecciona el nivel del curso.');
+        nivelSelect.focus();
+        return;
+      }
+      
+      if (!paralelo) {
+        e.preventDefault();
+        alert('Por favor selecciona el paralelo del curso.');
+        paraleloSelect.focus();
+        return;
+      }
+      
+      // Confirmar creación si hay muchos estudiantes seleccionados
+      const selectedStudents = Array.from(estudiantesSelect.selectedOptions);
+      if (selectedStudents.length > 40) {
+        if (!confirm(`¿Estás seguro de asignar ${selectedStudents.length} estudiantes a este curso? Es un número muy alto.`)) {
+          e.preventDefault();
+          return;
+        }
+      }
+    });
+  });
+
+  // Funciones auxiliares para selección múltiple
+  function selectAllStudents() {
+    const select = document.getElementById('id_estudiantes');
+    for (let option of select.options) {
+      option.selected = true;
+    }
+    document.getElementById('selected-count').textContent = select.options.length;
+  }
+  
+  function clearAllStudents() {
+    const select = document.getElementById('id_estudiantes');
+    for (let option of select.options) {
+      option.selected = false;
+    }
+    document.getElementById('selected-count').textContent = '0';
+  }
+
+  function selectAllSubjects() {
+    const select = document.getElementById('id_asignaturas');
+    for (let option of select.options) {
+      option.selected = true;
+    }
+  }
+  
+  function clearAllSubjects() {
+    const select = document.getElementById('id_asignaturas');
+    for (let option of select.options) {
+      option.selected = false;
+    }
+  }
+</script>
+{% endblock %}

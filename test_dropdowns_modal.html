@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Dropdowns y Modales</title>
+    
+    <!-- Bootstrap 3.3.7 CSS -->
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css">
+    
+    <style>
+        body { padding: 20px; }
+        .test-section { margin-bottom: 40px; padding: 20px; border: 1px solid #ddd; border-radius: 5px; }
+        .test-section h3 { color: #333; border-bottom: 1px solid #eee; padding-bottom: 10px; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>Test de Funcionalidad - Dropdowns y Modales</h1>
+    
+    <!-- Test 1: Dropdown simple -->
+    <div class="test-section">
+        <h3>Test 1: Dropdown de Acciones</h3>
+        <div class="btn-group">
+            <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown">
+                Acciones <span class="caret"></span>
+            </button>
+            <ul class="dropdown-menu" role="menu">
+                <li><a href="#"><i class="fa fa-edit"></i> Editar</a></li>
+                <li><a href="#"><i class="fa fa-clock-o"></i> Horarios</a></li>
+                <li><a href="#" onclick="abrirModal()"><i class="fa fa-user-plus"></i> Asignar Profesor</a></li>
+                <li class="divider"></li>
+                <li><a href="#" class="text-danger"><i class="fa fa-trash"></i> Eliminar</a></li>
+            </ul>
+        </div>
+        <div id="test1-result" class="alert" style="display: none; margin-top: 10px;"></div>
+    </div>
+    
+    <!-- Test 2: Dropdown de cursos -->
+    <div class="test-section">
+        <h3>Test 2: Dropdown de Cursos</h3>
+        <div class="btn-group">
+            <button type="button" class="btn btn-info btn-xs dropdown-toggle" data-toggle="dropdown">
+                3 cursos <span class="caret"></span>
+            </button>
+            <ul class="dropdown-menu" role="menu">
+                <li><a href="#">1° Medio A</a></li>
+                <li><a href="#">2° Medio B</a></li>
+                <li><a href="#">3° Medio A</a></li>
+            </ul>
+        </div>
+        <div id="test2-result" class="alert" style="display: none; margin-top: 10px;"></div>
+    </div>
+    
+    <!-- Test 3: Modal de asignar profesor -->
+    <div class="test-section">
+        <h3>Test 3: Modal de Asignar Profesor</h3>
+        <button type="button" class="btn btn-primary" onclick="abrirModal()">
+            Abrir Modal de Asignar Profesor
+        </button>
+        <div id="test3-result" class="alert" style="display: none; margin-top: 10px;"></div>
+    </div>
+    
+    <!-- Test 4: Enlaces de asignar/cambiar profesor -->
+    <div class="test-section">
+        <h3>Test 4: Enlaces de Profesor</h3>
+        <span class="badge badge-success">Juan Pérez</span>
+        <br><small>
+            <a href="#" onclick="cambiarProfesor(1)" class="text-primary">
+                <i class="fa fa-edit"></i> Cambiar
+            </a>
+        </small>
+        <br><br>
+        <span class="badge badge-danger">Sin asignar</span>
+        <br><small>
+            <a href="#" onclick="asignarProfesor(2)" class="text-success">
+                <i class="fa fa-plus"></i> Asignar
+            </a>
+        </small>
+        <div id="test4-result" class="alert" style="display: none; margin-top: 10px;"></div>
+    </div>
+</div>
+
+<!-- Modal para asignar/cambiar profesor -->
+<div class="modal fade" id="modalProfesor" tabindex="-1" role="dialog" aria-labelledby="modalProfesorTitle" aria-hidden="true">
+    <div class="modal-dialog modal-md" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+                <h4 class="modal-title" id="modalProfesorTitle">Asignar Profesor</h4>
+            </div>
+            <form id="formProfesor">
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label for="selectProfesor" class="control-label">Seleccionar Profesor:</label>
+                        <select class="form-control" id="selectProfesor" name="profesor_id" required>
+                            <option value="">-- Sin asignar --</option>
+                            <option value="1">Juan Pérez - Matemáticas</option>
+                            <option value="2">María González - Lenguaje</option>
+                            <option value="3">Carlos Rodríguez - Historia</option>
+                            <option value="4">Ana López - Ciencias</option>
+                        </select>
+                    </div>
+                    <div id="modalError" class="alert alert-danger" style="display: none;"></div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-default" data-dismiss="modal">
+                        <i class="fa fa-times"></i> Cancelar
+                    </button>
+                    <button type="submit" class="btn btn-primary" id="btnAsignar">
+                        <i class="fa fa-check"></i> Asignar
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- jQuery -->
+<script src="https://code.jquery.com/jquery-1.12.4.min.js"></script>
+<!-- Bootstrap JS -->
+<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
+
+<script>
+// Variables globales
+let asignaturaSeleccionada = null;
+
+// Esperar a que el DOM esté listo
+$(document).ready(function() {
+    console.log('DOM listo, inicializando tests...');
+    
+    // Test para verificar que jQuery funciona
+    $('#test1-result').removeClass('alert-danger alert-success').addClass('alert-info').html('jQuery cargado correctamente').show();
+    
+    // Test para verificar que Bootstrap funciona
+    setTimeout(function() {
+        if (typeof $.fn.modal === 'function') {
+            $('#test3-result').removeClass('alert-danger alert-success').addClass('alert-success').html('Bootstrap JS cargado correctamente').show();
+        } else {
+            $('#test3-result').removeClass('alert-danger alert-success').addClass('alert-danger').html('Error: Bootstrap JS no está disponible').show();
+        }
+    }, 1000);
+    
+    // Evento para dropdowns
+    $('.dropdown-toggle').on('click', function(e) {
+        e.preventDefault();
+        console.log('Dropdown clickeado');
+        const $dropdown = $(this).parent();
+        const isOpen = $dropdown.hasClass('open');
+        
+        // Cerrar otros dropdowns
+        $('.dropdown').removeClass('open');
+        
+        // Toggle este dropdown
+        if (!isOpen) {
+            $dropdown.addClass('open');
+            $('#test1-result, #test2-result').removeClass('alert-danger alert-info').addClass('alert-success').html('Dropdown funciona correctamente!').show();
+        }
+    });
+    
+    // Cerrar dropdowns al hacer click fuera
+    $(document).on('click', function(e) {
+        if (!$(e.target).closest('.dropdown').length) {
+            $('.dropdown').removeClass('open');
+        }
+    });
+    
+    // Evento para el formulario del modal
+    $('#formProfesor').on('submit', function(e) {
+        e.preventDefault();
+        console.log('Formulario enviado');
+        
+        const profesorId = $('#selectProfesor').val();
+        const profesorTexto = $('#selectProfesor option:selected').text();
+        
+        if (profesorId) {
+            showAlert('success', `Profesor ${profesorTexto} asignado exitosamente (simulación)`);
+            $('#modalProfesor').modal('hide');
+        } else {
+            showModalError('Debe seleccionar un profesor');
+        }
+    });
+});
+
+// Función para abrir modal (genérica)
+function abrirModal() {
+    console.log('Abriendo modal...');
+    asignaturaSeleccionada = 1; // Simular ID
+    $('#modalProfesorTitle').text('Asignar Profesor (Test)');
+    $('#selectProfesor').val('');
+    $('#modalError').hide();
+    $('#btnAsignar').html('<i class="fa fa-check"></i> Asignar').prop('disabled', false);
+    $('#modalProfesor').modal('show');
+}
+
+// Función para asignar profesor
+function asignarProfesor(asignaturaId) {
+    console.log('Asignando profesor a asignatura:', asignaturaId);
+    asignaturaSeleccionada = asignaturaId;
+    $('#modalProfesorTitle').text('Asignar Profesor');
+    $('#selectProfesor').val('');
+    $('#modalError').hide();
+    $('#btnAsignar').html('<i class="fa fa-check"></i> Asignar').prop('disabled', false);
+    $('#modalProfesor').modal('show');
+    
+    $('#test4-result').removeClass('alert-danger alert-info').addClass('alert-success').html('Función asignarProfesor() ejecutada correctamente').show();
+}
+
+// Función para cambiar profesor
+function cambiarProfesor(asignaturaId) {
+    console.log('Cambiando profesor de asignatura:', asignaturaId);
+    asignaturaSeleccionada = asignaturaId;
+    $('#modalProfesorTitle').text('Cambiar Profesor');
+    $('#modalError').hide();
+    $('#btnAsignar').html('<i class="fa fa-edit"></i> Cambiar').prop('disabled', false);
+    $('#modalProfesor').modal('show');
+    
+    $('#test4-result').removeClass('alert-danger alert-info').addClass('alert-success').html('Función cambiarProfesor() ejecutada correctamente').show();
+}
+
+// Función para mostrar errores en el modal
+function showModalError(message) {
+    $('#modalError').text(message).show();
+}
+
+// Función para mostrar alertas
+function showAlert(type, message) {
+    const alertClass = type === 'success' ? 'alert-success' : 'alert-danger';
+    const alertHtml = `
+        <div class="alert ${alertClass} alert-dismissible" role="alert" style="position: fixed; top: 70px; right: 20px; z-index: 9999; min-width: 350px; max-width: 500px;">
+            <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                <span aria-hidden="true">&times;</span>
+            </button>
+            <strong>${type === 'success' ? 'Éxito!' : 'Error!'}</strong> ${message}
+        </div>
+    `;
+    
+    $('body').append(alertHtml);
+    
+    // Auto-hide after 5 seconds
+    setTimeout(function() {
+        $('.alert').fadeOut();
+    }, 5000);
+}
+
+// Eventos adicionales para debugging
+$(document).on('shown.bs.modal', '#modalProfesor', function() {
+    console.log('Modal mostrado correctamente');
+});
+
+$(document).on('hidden.bs.modal', '#modalProfesor', function() {
+    console.log('Modal ocultado correctamente');
+});
+</script>
+
+</body>
+</html>

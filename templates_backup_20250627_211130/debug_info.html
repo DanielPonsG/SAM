@@ -1,0 +1,202 @@
+{% extends "index_master.html" %}
+
+{% block content %}
+<div class="right_col" role="main">
+  <div class="container-fluid">
+    <div class="row mb-4">
+      <div class="col-12">
+        <div class="page-title">
+          <div class="title_left">
+            <h1><i class="fas fa-tools text-warning"></i> Información de Sistema</h1>
+            <p class="text-muted">Información técnica y de depuración del sistema</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Solo mostrar para administradores -->
+    {% if user.is_authenticated and user.perfil.tipo_usuario == 'administrador' %}
+      
+      <!-- Información del usuario actual -->
+      <div class="row mb-4">
+        <div class="col-12">
+          <div class="card border-0 shadow-sm">
+            <div class="card-header bg-primary text-white">
+              <h5 class="mb-0"><i class="fas fa-user me-2"></i>Información del Usuario Actual</h5>
+            </div>
+            <div class="card-body">
+              <div class="row">
+                <div class="col-md-6">
+                  <table class="table table-sm">
+                    <tr>
+                      <td><strong>Usuario:</strong></td>
+                      <td>{{ user.username }}</td>
+                    </tr>
+                    <tr>
+                      <td><strong>Email:</strong></td>
+                      <td>{{ user.email|default:"No registrado" }}</td>
+                    </tr>
+                    <tr>
+                      <td><strong>Nombre completo:</strong></td>
+                      <td>{{ user.get_full_name|default:"No registrado" }}</td>
+                    </tr>
+                    <tr>
+                      <td><strong>Es superusuario:</strong></td>
+                      <td>
+                        {% if user.is_superuser %}
+                          <span class="badge bg-success">Sí</span>
+                        {% else %}
+                          <span class="badge bg-secondary">No</span>
+                        {% endif %}
+                      </td>
+                    </tr>
+                  </table>
+                </div>
+                <div class="col-md-6">
+                  <table class="table table-sm">
+                    <tr>
+                      <td><strong>Tipo de perfil:</strong></td>
+                      <td>
+                        {% if user.perfil %}
+                          <span class="badge bg-primary">{{ user.perfil.get_tipo_usuario_display }}</span>
+                        {% else %}
+                          <span class="badge bg-danger">Sin perfil</span>
+                        {% endif %}
+                      </td>
+                    </tr>
+                    <tr>
+                      <td><strong>Fecha de registro:</strong></td>
+                      <td>{{ user.date_joined|date:"d/m/Y H:i" }}</td>
+                    </tr>
+                    <tr>
+                      <td><strong>Último acceso:</strong></td>
+                      <td>{{ user.last_login|date:"d/m/Y H:i"|default:"Nunca" }}</td>
+                    </tr>
+                    <tr>
+                      <td><strong>Está activo:</strong></td>
+                      <td>
+                        {% if user.is_active %}
+                          <span class="badge bg-success">Activo</span>
+                        {% else %}
+                          <span class="badge bg-danger">Inactivo</span>
+                        {% endif %}
+                      </td>
+                    </tr>
+                  </table>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- URLs del sistema -->
+      <div class="row mb-4">
+        <div class="col-12">
+          <div class="card border-0 shadow-sm">
+            <div class="card-header bg-info text-white">
+              <h5 class="mb-0"><i class="fas fa-link me-2"></i>URLs Principales del Sistema</h5>
+            </div>
+            <div class="card-body">
+              <div class="row">
+                <div class="col-md-6">
+                  <h6 class="text-primary">Gestión de Usuarios</h6>
+                  <ul class="list-unstyled">
+                    <li><a href="{% url 'agregar' %}" class="text-decoration-none">🔗 Agregar Usuario</a></li>
+                    <li><a href="{% url 'modificar' %}" class="text-decoration-none">🔗 Modificar Usuario</a></li>
+                    <li><a href="{% url 'eliminar' %}" class="text-decoration-none">🔗 Eliminar Usuario</a></li>
+                    <li><a href="{% url 'listar_estudiantes' %}" class="text-decoration-none">🔗 Listar Usuarios</a></li>
+                  </ul>
+                </div>
+                <div class="col-md-6">
+                  <h6 class="text-success">Gestión Académica</h6>
+                  <ul class="list-unstyled">
+                    <li><a href="{% url 'calendario' %}" class="text-decoration-none">🔗 Calendario</a></li>
+                    <li><a href="{% url 'listar_cursos' %}" class="text-decoration-none">🔗 Gestionar Cursos</a></li>
+                    <li><a href="{% url 'listar_asignaturas' %}" class="text-decoration-none">🔗 Gestionar Asignaturas</a></li>
+                    <li><a href="{% url 'ingresar_notas' %}" class="text-decoration-none">🔗 Gestionar Notas</a></li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Estadísticas del sistema -->
+      <div class="row">
+        <div class="col-md-3">
+          <div class="card border-0 shadow-sm text-center">
+            <div class="card-body">
+              <i class="fas fa-users fa-2x text-primary mb-2"></i>
+              <h4 class="text-primary">{{ total_usuarios|default:0 }}</h4>
+              <p class="text-muted mb-0">Usuarios Totales</p>
+            </div>
+          </div>
+        </div>
+        <div class="col-md-3">
+          <div class="card border-0 shadow-sm text-center">
+            <div class="card-body">
+              <i class="fas fa-graduation-cap fa-2x text-info mb-2"></i>
+              <h4 class="text-info">{{ total_estudiantes|default:0 }}</h4>
+              <p class="text-muted mb-0">Estudiantes</p>
+            </div>
+          </div>
+        </div>
+        <div class="col-md-3">
+          <div class="card border-0 shadow-sm text-center">
+            <div class="card-body">
+              <i class="fas fa-chalkboard-teacher fa-2x text-success mb-2"></i>
+              <h4 class="text-success">{{ total_profesores|default:0 }}</h4>
+              <p class="text-muted mb-0">Profesores</p>
+            </div>
+          </div>
+        </div>
+        <div class="col-md-3">
+          <div class="card border-0 shadow-sm text-center">
+            <div class="card-body">
+              <i class="fas fa-user-shield fa-2x text-warning mb-2"></i>
+              <h4 class="text-warning">{{ total_admins|default:0 }}</h4>
+              <p class="text-muted mb-0">Administradores</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    {% else %}
+      <!-- Mensaje para usuarios no autorizados -->
+      <div class="row">
+        <div class="col-12">
+          <div class="alert alert-warning text-center">
+            <i class="fas fa-exclamation-triangle fa-2x mb-3"></i>
+            <h4>Acceso Restringido</h4>
+            <p>Esta página solo está disponible para administradores del sistema.</p>
+            <a href="{% url 'inicio' %}" class="btn btn-primary">Volver al Inicio</a>
+          </div>
+        </div>
+      </div>
+    {% endif %}
+
+  </div>
+</div>
+
+<style>
+.card {
+  border-radius: 10px;
+  transition: transform 0.2s ease;
+}
+
+.card:hover {
+  transform: translateY(-2px);
+}
+
+.table td {
+  border: none;
+  padding: 0.5rem;
+}
+
+.table tr:nth-child(even) {
+  background-color: rgba(0,0,0,0.02);
+}
+</style>
+{% endblock %}

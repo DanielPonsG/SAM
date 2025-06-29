@@ -1,0 +1,39 @@
+{% extends "index_master.html" %}
+{% block content %}
+<div class="right_col" role="main">
+  <div class="container-fluid">
+    <h1>PRUEBA DE CURSOS</h1>
+    
+    <div class="row">
+      <div class="col-12">
+        <p>Total cursos_info: {{ cursos_info|length }}</p>
+        <p>Año actual: {{ anio_actual }}</p>
+      </div>
+    </div>
+    
+    <div class="row">
+      {% for info in cursos_info %}
+      <div class="col-md-4 mb-3">
+        <div class="card">
+          <div class="card-body">
+            <h5>{{ info.curso.get_nivel_display }}{{ info.curso.paralelo }}</h5>
+            <p>ID: {{ info.curso.id }}</p>
+            <p>Año: {{ info.curso.anio }}</p>
+            <p>Horarios: {{ info.horarios_count }}</p>
+            <p>Asignaturas: {{ info.asignaturas_count }}</p>
+            <p>Estudiantes: {{ info.estudiantes_count }}</p>
+            <a href="{% url 'gestionar_horarios' info.curso.id %}" class="btn btn-primary">
+              Gestionar Horarios
+            </a>
+          </div>
+        </div>
+      </div>
+      {% empty %}
+      <div class="col-12">
+        <p>No hay cursos en cursos_info</p>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,662 @@
+{% extends "index_master.html" %}
+{% load widget_tweaks %}
+{% block content %}
+<div class="right_col" role="main">
+  <div class="container-fluid">
+    <!-- Mensajes -->
+    {% if messages %}
+      <div class="row mb-3">
+        <div class="col-12">
+          {% for message in messages %}
+            <div class="alert alert-{{ message.tags|default:'info' }} alert-dismissible fade show" role="alert">
+              {% if message.tags == 'success' %}
+                <i class="fas fa-check-circle me-2"></i>
+              {% elif message.tags == 'error' %}
+                <i class="fas fa-exclamation-triangle me-2"></i>
+              {% endif %}
+              {{ message }}
+              <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+          {% endfor %}
+        </div>
+      </div>
+    {% endif %}
+
+    <!-- Breadcrumb -->
+    <div class="row mb-3">
+      <div class="col-12">
+        <nav aria-label="breadcrumb">
+          <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'inicio' %}">Inicio</a></li>
+            <li class="breadcrumb-item"><a href="{% url 'ver_notas_curso' %}">Gestión de Notas</a></li>
+            <li class="breadcrumb-item active" aria-current="page">Editar Nota</li>
+          </ol>
+        </nav>
+      </div>
+    </div>
+
+    <!-- Header mejorado -->
+    <div class="row mb-4">
+      <div class="col-12">
+        <div class="header-card">
+          <div class="d-flex justify-content-between align-items-center">
+            <div>
+              <h1 class="header-title">
+                <i class="fas fa-edit header-icon"></i>Editar Nota
+              </h1>
+              <p class="header-subtitle">Modifica la calificación del estudiante</p>
+            </div>
+            <div>
+              <a href="{% url 'ver_notas_curso' %}" class="btn btn-outline-secondary btn-lg">
+                <i class="fas fa-arrow-left me-2"></i>Volver a Notas
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Información del contexto mejorada -->
+    <div class="row mb-4">
+      <div class="col-12">
+        <div class="info-card">
+          <div class="info-header">
+            <h5 class="info-title">
+              <i class="fas fa-info-circle me-2"></i>Información de la Calificación
+            </h5>
+          </div>
+          <div class="info-body">
+            <div class="row">
+              <div class="col-md-6">
+                <div class="info-section">
+                  <h6 class="info-label">
+                    <i class="fas fa-user-graduate me-2"></i>Estudiante:
+                  </h6>
+                  <div class="info-content">
+                    <div class="info-name">{{ estudiante.primer_nombre }} {{ estudiante.apellido_paterno }}</div>
+                    <small class="info-code">{{ estudiante.codigo_estudiante }}</small>
+                  </div>
+                </div>
+              </div>
+              <div class="col-md-6">
+                <div class="info-section">
+                  <h6 class="info-label">
+                    <i class="fas fa-book me-2"></i>Asignatura:
+                  </h6>
+                  <div class="info-content">
+                    <div class="info-name">{{ asignatura.nombre }}</div>
+                    <small class="info-code">{{ asignatura.codigo_asignatura }}</small>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Formulario de edición mejorado -->
+    <div class="row justify-content-center">
+      <div class="col-lg-10">
+        <div class="form-card">
+          <div class="form-header">
+            <h4 class="form-title">
+              <i class="fas fa-clipboard-list me-2"></i>{{ titulo }}
+            </h4>
+          </div>
+          <div class="form-body">
+            <form method="post" novalidate class="modern-form">
+              {% csrf_token %}
+              
+              <div class="row">
+                <!-- Columna izquierda -->
+                <div class="col-md-6">
+                  <!-- Nombre de la evaluación -->
+                  <div class="form-group">
+                    <label for="{{ form.nombre_evaluacion.id_for_label }}" class="form-label">
+                      <i class="fas fa-tag form-icon"></i>{{ form.nombre_evaluacion.label }}
+                      {% if form.nombre_evaluacion.field.required %}<span class="required">*</span>{% endif %}
+                    </label>
+                    {% render_field form.nombre_evaluacion class="form-control form-control-lg" %}
+                    {% if form.nombre_evaluacion.help_text %}
+                      <small class="form-help">{{ form.nombre_evaluacion.help_text }}</small>
+                    {% endif %}
+                    {% for error in form.nombre_evaluacion.errors %}
+                      <div class="form-error">{{ error }}</div>
+                    {% endfor %}
+                  </div>
+
+                  <!-- Puntaje -->
+                  <div class="form-group">
+                    <label for="{{ form.puntaje.id_for_label }}" class="form-label">
+                      <i class="fas fa-star form-icon"></i>{{ form.puntaje.label }}
+                      {% if form.puntaje.field.required %}<span class="required">*</span>{% endif %}
+                    </label>
+                    {% render_field form.puntaje class="form-control form-control-lg text-center" %}
+                    {% if form.puntaje.help_text %}
+                      <small class="form-help">{{ form.puntaje.help_text }}</small>
+                    {% endif %}
+                    {% for error in form.puntaje.errors %}
+                      <div class="form-error">{{ error }}</div>
+                    {% endfor %}
+                  </div>
+
+                  <!-- Porcentaje -->
+                  <div class="form-group">
+                    <label for="{{ form.porcentaje.id_for_label }}" class="form-label">
+                      <i class="fas fa-percentage form-icon"></i>{{ form.porcentaje.label }}
+                    </label>
+                    {% render_field form.porcentaje class="form-control form-control-lg text-center" %}
+                    {% if form.porcentaje.help_text %}
+                      <small class="form-help">{{ form.porcentaje.help_text }}</small>
+                    {% endif %}
+                    {% for error in form.porcentaje.errors %}
+                      <div class="form-error">{{ error }}</div>
+                    {% endfor %}
+                  </div>
+                </div>
+
+                <!-- Columna derecha -->
+                <div class="col-md-6">
+                  <!-- Detalle -->
+                  <div class="form-group">
+                    <label for="{{ form.detalle.id_for_label }}" class="form-label">
+                      <i class="fas fa-info form-icon"></i>{{ form.detalle.label }}
+                    </label>
+                    {% render_field form.detalle class="form-control form-control-lg" %}
+                    {% if form.detalle.help_text %}
+                      <small class="form-help">{{ form.detalle.help_text }}</small>
+                    {% endif %}
+                    {% for error in form.detalle.errors %}
+                      <div class="form-error">{{ error }}</div>
+                    {% endfor %}
+                  </div>
+
+                  <!-- Descripción -->
+                  <div class="form-group">
+                    <label for="{{ form.descripcion.id_for_label }}" class="form-label">
+                      <i class="fas fa-comment form-icon"></i>{{ form.descripcion.label }}
+                    </label>
+                    {% render_field form.descripcion class="form-control form-control-lg" %}
+                    {% if form.descripcion.help_text %}
+                      <small class="form-help">{{ form.descripcion.help_text }}</small>
+                    {% endif %}
+                    {% for error in form.descripcion.errors %}
+                      <div class="form-error">{{ error }}</div>
+                    {% endfor %}
+                  </div>
+                </div>
+              </div>
+
+              <!-- Campos ocultos necesarios -->
+              {% for field in form.hidden_fields %}
+                {{ field }}
+              {% endfor %}
+
+              <!-- Errores generales del formulario -->
+              {% if form.non_field_errors %}
+                <div class="alert alert-danger form-alert">
+                  {% for error in form.non_field_errors %}
+                    <div>{{ error }}</div>
+                  {% endfor %}
+                </div>
+              {% endif %}
+
+              <!-- Botones de acción -->
+              <div class="form-actions">
+                <div class="form-note">
+                  <i class="fas fa-info-circle me-1"></i>
+                  Los campos marcados con <span class="required">*</span> son obligatorios
+                </div>
+                <div class="action-buttons">
+                  <a href="{% url 'ver_notas_curso' %}" class="btn btn-secondary btn-lg me-3">
+                    <i class="fas fa-times me-2"></i>Cancelar
+                  </a>
+                  <button type="submit" class="btn btn-success btn-lg">
+                    <i class="fas fa-save me-2"></i>Guardar Cambios
+                  </button>
+                </div>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Vista previa de la nota actual -->
+    <div class="row mt-4">
+      <div class="col-md-6 offset-md-3">
+        <div class="card border-secondary">
+          <div class="card-header bg-secondary text-white">
+            <h6 class="mb-0">
+              <i class="fas fa-eye me-2"></i>Vista Previa Actual
+            </h6>
+          </div>
+          <div class="card-body">
+            <div class="row text-center">
+              <div class="col-3">
+                <div class="fw-bold text-primary">Evaluación</div>
+                <div class="small">{{ nota.nombre_evaluacion }}</div>
+              </div>
+              <div class="col-3">
+                <div class="fw-bold text-success">Puntaje</div>
+                <div class="small">{{ nota.puntaje }}</div>
+              </div>
+              <div class="col-3">
+                <div class="fw-bold text-info">Porcentaje</div>
+                <div class="small">{{ nota.porcentaje }}%</div>
+              </div>
+              <div class="col-3">
+                <div class="fw-bold text-warning">Fecha</div>
+                <div class="small">{{ nota.fecha_evaluacion|date:"d/m/Y" }}</div>
+              </div>
+            </div>
+            {% if nota.detalle %}
+              <hr>
+              <div class="text-center">
+                <div class="fw-bold">Detalle:</div>
+                <div class="small">{{ nota.detalle }}</div>
+              </div>
+            {% endif %}
+            {% if nota.descripcion %}
+              <hr>
+              <div class="text-center">
+                <div class="fw-bold">Descripción:</div>
+                <div class="small">{{ nota.descripcion|truncatewords:20 }}</div>
+              </div>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<style>
+/* Diseño moderno y mejor visibilidad */
+body {
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  background-color: #f8f9fa;
+}
+
+/* Header mejorado */
+.header-card {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  padding: 2rem;
+  border-radius: 15px;
+  box-shadow: 0 10px 30px rgba(102, 126, 234, 0.3);
+  margin-bottom: 2rem;
+}
+
+.header-title {
+  font-size: 2.5rem;
+  font-weight: 700;
+  margin-bottom: 0.5rem;
+}
+
+.header-icon {
+  color: #ffd700;
+  margin-right: 1rem;
+}
+
+.header-subtitle {
+  font-size: 1.2rem;
+  margin-bottom: 0;
+  opacity: 0.9;
+}
+
+/* Tarjeta de información mejorada */
+.info-card {
+  background: white;
+  border-radius: 15px;
+  box-shadow: 0 5px 20px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+  margin-bottom: 2rem;
+}
+
+.info-header {
+  background: linear-gradient(135deg, #17a2b8 0%, #138496 100%);
+  color: white;
+  padding: 1.5rem;
+}
+
+.info-title {
+  font-size: 1.3rem;
+  font-weight: 600;
+  margin-bottom: 0;
+}
+
+.info-body {
+  padding: 2rem;
+}
+
+.info-section {
+  padding: 1rem;
+  border-radius: 10px;
+  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+  height: 100%;
+}
+
+.info-label {
+  color: #495057;
+  font-weight: 600;
+  font-size: 1rem;
+  margin-bottom: 1rem;
+}
+
+.info-content {
+  text-align: center;
+}
+
+.info-name {
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: #212529;
+  margin-bottom: 0.5rem;
+}
+
+.info-code {
+  color: #6c757d;
+  font-size: 1rem;
+  font-weight: 500;
+}
+
+/* Formulario moderno */
+.form-card {
+  background: white;
+  border-radius: 15px;
+  box-shadow: 0 5px 20px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+  margin-bottom: 2rem;
+}
+
+.form-header {
+  background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+  color: white;
+  padding: 1.5rem;
+}
+
+.form-title {
+  font-size: 1.4rem;
+  font-weight: 600;
+  margin-bottom: 0;
+}
+
+.form-body {
+  padding: 2.5rem;
+}
+
+.modern-form {
+  max-width: none;
+}
+
+/* Grupos de formulario */
+.form-group {
+  margin-bottom: 2rem;
+}
+
+.form-label {
+  color: #495057;
+  font-weight: 600;
+  font-size: 1.1rem;
+  margin-bottom: 0.8rem;
+  display: flex;
+  align-items: center;
+}
+
+.form-icon {
+  color: #6c757d;
+  margin-right: 0.5rem;
+  width: 20px;
+}
+
+.required {
+  color: #dc3545;
+  font-weight: 700;
+  margin-left: 0.25rem;
+}
+
+/* Controles de formulario mejorados */
+.form-control {
+  border: 2px solid #e9ecef;
+  border-radius: 10px;
+  padding: 0.8rem 1rem;
+  font-size: 1rem;
+  transition: all 0.3s ease;
+  background-color: #f8f9fa;
+}
+
+.form-control:focus {
+  border-color: #667eea;
+  box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+  background-color: white;
+}
+
+.form-control-lg {
+  padding: 1rem 1.2rem;
+  font-size: 1.1rem;
+}
+
+/* Ayuda y errores */
+.form-help {
+  color: #6c757d;
+  font-size: 0.9rem;
+  margin-top: 0.5rem;
+  display: block;
+}
+
+.form-error {
+  color: #dc3545;
+  font-size: 0.9rem;
+  font-weight: 500;
+  margin-top: 0.5rem;
+  padding: 0.5rem;
+  background-color: #f8d7da;
+  border-radius: 5px;
+  border-left: 4px solid #dc3545;
+}
+
+.form-alert {
+  border-radius: 10px;
+  border: none;
+  padding: 1rem 1.5rem;
+  font-weight: 500;
+}
+
+/* Acciones del formulario */
+.form-actions {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 3rem;
+  padding-top: 2rem;
+  border-top: 2px solid #e9ecef;
+}
+
+.form-note {
+  color: #6c757d;
+  font-size: 0.95rem;
+  font-weight: 500;
+}
+
+.action-buttons {
+  display: flex;
+  gap: 1rem;
+}
+
+/* Botones mejorados */
+.btn {
+  border-radius: 10px;
+  font-weight: 600;
+  padding: 0.75rem 1.5rem;
+  font-size: 1rem;
+  transition: all 0.3s ease;
+  border: none;
+}
+
+.btn-lg {
+  padding: 1rem 2rem;
+  font-size: 1.1rem;
+}
+
+.btn-success {
+  background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+  color: white;
+  box-shadow: 0 4px 15px rgba(40, 167, 69, 0.3);
+}
+
+.btn-success:hover {
+  background: linear-gradient(135deg, #218838 0%, #1e7e34 100%);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(40, 167, 69, 0.4);
+}
+
+.btn-secondary {
+  background: linear-gradient(135deg, #6c757d 0%, #5a6268 100%);
+  color: white;
+  box-shadow: 0 4px 15px rgba(108, 117, 125, 0.3);
+}
+
+.btn-secondary:hover {
+  background: linear-gradient(135deg, #5a6268 0%, #495057 100%);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(108, 117, 125, 0.4);
+}
+
+.btn-outline-secondary {
+  border: 2px solid #6c757d;
+  color: #6c757d;
+  background: transparent;
+}
+
+.btn-outline-secondary:hover {
+  background: #6c757d;
+  color: white;
+  transform: translateY(-1px);
+}
+
+/* Vista previa mejorada */
+.card {
+  border: none;
+  border-radius: 15px;
+  box-shadow: 0 5px 20px rgba(0, 0, 0, 0.1);
+}
+
+.card-header {
+  border-radius: 15px 15px 0 0 !important;
+  border-bottom: none;
+  padding: 1.5rem;
+}
+
+.card-body {
+  padding: 2rem;
+}
+
+.border-secondary {
+  border: 2px solid #dee2e6 !important;
+}
+
+.bg-secondary {
+  background: linear-gradient(135deg, #6c757d 0%, #5a6268 100%) !important;
+}
+
+/* Breadcrumb mejorado */
+.breadcrumb {
+  background: white;
+  border-radius: 10px;
+  padding: 1rem 1.5rem;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+  margin-bottom: 1.5rem;
+}
+
+.breadcrumb-item a {
+  color: #667eea;
+  text-decoration: none;
+  font-weight: 500;
+}
+
+.breadcrumb-item a:hover {
+  color: #5a67d8;
+  text-decoration: underline;
+}
+
+.breadcrumb-item + .breadcrumb-item::before {
+  content: ">";
+  color: #6c757d;
+  font-weight: 600;
+}
+
+/* Responsivo */
+@media (max-width: 768px) {
+  .header-title {
+    font-size: 2rem;
+  }
+  
+  .header-subtitle {
+    font-size: 1rem;
+  }
+  
+  .form-body {
+    padding: 1.5rem;
+  }
+  
+  .form-actions {
+    flex-direction: column;
+    gap: 1rem;
+    text-align: center;
+  }
+  
+  .action-buttons {
+    width: 100%;
+    justify-content: center;
+  }
+  
+  .btn-lg {
+    width: 100%;
+    margin-bottom: 0.5rem;
+  }
+}
+
+/* Animaciones */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.header-card,
+.info-card,
+.form-card {
+  animation: fadeInUp 0.6s ease-out;
+}
+
+.info-card {
+  animation-delay: 0.1s;
+}
+
+.form-card {
+  animation-delay: 0.2s;
+}
+
+/* Efectos de hover */
+.form-control:hover {
+  border-color: #ced4da;
+  background-color: white;
+}
+
+.info-section {
+  transition: all 0.3s ease;
+}
+
+.info-section:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+}
+</style>
+{% endblock %}

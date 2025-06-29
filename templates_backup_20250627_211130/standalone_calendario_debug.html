@@ -1,0 +1,1935 @@
+
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <!-- Meta, title, CSS, favicons, etc. -->
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+	<link rel="icon" href="images/favicon.ico" type="image/ico" />
+
+    <title>SMA</title>
+
+    <!-- Bootstrap -->
+    <link href="/static/FrWork/admin_lte/vendors/bootstrap/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link href="/static/FrWork/admin_lte/vendors/font-awesome/css/font-awesome.min.css" rel="stylesheet">
+    <!-- Font Awesome 6 (CDN para iconos más modernos) -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <!-- NProgress -->
+    <link href="/static/FrWork/admin_lte/vendors/nprogress/nprogress.css" rel="stylesheet">
+    <!-- iCheck -->
+    <link href="/static/FrWork/admin_lte/vendors/iCheck/skins/flat/green.css" rel="stylesheet">
+	
+    <!-- bootstrap-progressbar -->
+    <link href="/static/FrWork/admin_lte/vendors/bootstrap-progressbar/css/bootstrap-progressbar-3.3.4.min.css" rel="stylesheet">
+    <!-- JQVMap -->
+    <link href="/static/FrWork/admin_lte/vendors/jqvmap/dist/jqvmap.min.css" rel="stylesheet"/>
+    <!-- bootstrap-daterangepicker -->
+    <link href="/static/FrWork/admin_lte/vendors/bootstrap-daterangepicker/daterangepicker.css" rel="stylesheet">
+
+    <!-- Custom Theme Style -->
+    <link href="/static/FrWork/admin_lte/build/css/custom.min.css" rel="stylesheet">
+    
+    <!-- Custom Sidebar Styles -->
+    <style>
+      .left_col {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+        box-shadow: 4px 0 20px rgba(0,0,0,0.15);
+        position: relative;
+        overflow: hidden;
+      }
+      
+      .left_col::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: linear-gradient(45deg, rgba(255,255,255,0.1) 0%, transparent 100%);
+        pointer-events: none;
+      }
+      
+      .site_title {
+        background: rgba(255,255,255,0.15) !important;
+        border-radius: 15px;
+        margin: 15px;
+        padding: 15px !important;
+        backdrop-filter: blur(15px);
+        border: 1px solid rgba(255,255,255,0.2);
+        box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+        transition: all 0.3s ease;
+      }
+      
+      .site_title:hover {
+        background: rgba(255,255,255,0.2) !important;
+        transform: translateY(-2px);
+        box-shadow: 0 12px 40px rgba(0,0,0,0.15);
+      }
+      
+      .site_title span {
+        color: #fff !important;
+        font-weight: 700;
+        font-size: 26px;
+        text-shadow: 2px 2px 8px rgba(0,0,0,0.3);
+        letter-spacing: 1px;
+      }
+      
+      .profile {
+        background: rgba(255,255,255,0.12);
+        border-radius: 20px;
+        margin: 15px;
+        padding: 20px;
+        backdrop-filter: blur(15px);
+        border: 1px solid rgba(255,255,255,0.15);
+        box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+        transition: all 0.3s ease;
+      }
+      
+      .profile:hover {
+        background: rgba(255,255,255,0.18);
+        transform: translateY(-1px);
+        box-shadow: 0 12px 40px rgba(0,0,0,0.15);
+      }
+      
+      .profile_pic {
+        position: relative;
+        margin-bottom: 15px;
+      }
+      
+      .profile_pic img {
+        border: 3px solid rgba(255,255,255,0.3);
+        box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+        transition: all 0.3s ease;
+      }
+      
+      .profile_pic:hover img {
+        border-color: rgba(255,255,255,0.6);
+        transform: scale(1.05);
+      }
+      
+      .profile_info h2 {
+        color: #fff !important;
+        font-weight: 700;
+        margin-bottom: 8px;
+        font-size: 18px;
+        text-shadow: 1px 1px 4px rgba(0,0,0,0.3);
+      }
+      
+      .profile_info span {
+        color: rgba(255,255,255,0.9) !important;
+        font-size: 14px;
+        font-weight: 500;
+      }
+      
+      .profile_info p {
+        color: rgba(255,255,255,0.9) !important;
+        background: rgba(255,255,255,0.15);
+        padding: 6px 12px;
+        border-radius: 15px;
+        display: inline-block;
+        font-size: 12px;
+        margin-top: 8px;
+        font-weight: 600;
+        border: 1px solid rgba(255,255,255,0.1);
+        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+      }
+      
+      .main_menu_side h3 {
+        color: rgba(255,255,255,0.95) !important;
+        font-size: 12px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 1.5px;
+        margin: 25px 15px 15px 15px;
+        padding: 10px 0;
+        border-bottom: 2px solid rgba(255,255,255,0.25);
+        position: relative;
+      }
+      
+      .main_menu_side h3::after {
+        content: '';
+        position: absolute;
+        bottom: -2px;
+        left: 0;
+        width: 40px;
+        height: 2px;
+        background: #fff;
+        border-radius: 1px;
+      }
+      
+      .main_menu_side .nav > li > a {
+        color: rgba(255,255,255,0.9) !important;
+        background: transparent !important;
+        border-radius: 12px;
+        margin: 4px 12px;
+        padding: 14px 18px;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        border-left: 4px solid transparent;
+        font-weight: 500;
+        position: relative;
+        overflow: hidden;
+      }
+      
+      .main_menu_side .nav > li > a::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(255,255,255,0.1);
+        transform: translateX(-100%);
+        transition: transform 0.3s ease;
+      }
+      
+      .main_menu_side .nav > li > a:hover::before {
+        transform: translateX(0);
+      }
+      
+      .main_menu_side .nav > li > a:hover {
+        background: rgba(255,255,255,0.2) !important;
+        color: #fff !important;
+        border-left: 4px solid #fff;
+        transform: translateX(6px);
+        box-shadow: 0 6px 25px rgba(0,0,0,0.15);
+      }
+      
+      .main_menu_side .nav > li > a i {
+        font-size: 17px;
+        margin-right: 12px;
+        width: 22px;
+        text-align: center;
+        position: relative;
+        z-index: 1;
+      }
+      
+      .sidebar-footer {
+        background: rgba(255,255,255,0.12) !important;
+        border-radius: 15px;
+        margin: 15px;
+        padding: 15px;
+        backdrop-filter: blur(15px);
+        border: 1px solid rgba(255,255,255,0.15);
+        box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+      }
+      
+      .sidebar-footer a {
+        color: rgba(255,255,255,0.8) !important;
+        background: rgba(255,255,255,0.15);
+        border-radius: 50%;
+        width: 45px;
+        height: 45px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        margin: 3px;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        border: 1px solid rgba(255,255,255,0.1);
+        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+      }
+      
+      .sidebar-footer a:hover {
+        background: rgba(255,255,255,0.25) !important;
+        color: #fff !important;
+        transform: scale(1.15) translateY(-2px);
+        box-shadow: 0 8px 25px rgba(0,0,0,0.2);
+      }
+      
+      /* Colores específicos por tipo de usuario con mejores gradientes */
+      .menu-alumno {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #4facfe 100%) !important;
+      }
+      
+      .menu-profesor {
+        background: linear-gradient(135deg, #43e97b 0%, #38f9d7 50%, #2bc990 100%) !important;
+      }
+      
+      .menu-director {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #fa709a 100%) !important;
+      }
+      
+      /* Scroll personalizado mejorado */
+      .scroll-view::-webkit-scrollbar {
+        width: 8px;
+      }
+      
+      .scroll-view::-webkit-scrollbar-track {
+        background: rgba(255,255,255,0.1);
+        border-radius: 4px;
+        margin: 10px 0;
+      }
+      
+      .scroll-view::-webkit-scrollbar-thumb {
+        background: rgba(255,255,255,0.3);
+        border-radius: 4px;
+        transition: background 0.3s ease;
+      }
+      
+      .scroll-view::-webkit-scrollbar-thumb:hover {
+        background: rgba(255,255,255,0.5);
+      }
+      
+      /* Animaciones adicionales */
+      @keyframes slideInLeft {
+        from {
+          opacity: 0;
+          transform: translateX(-20px);
+        }
+        to {
+          opacity: 1;
+          transform: translateX(0);
+        }
+      }
+      
+      .main_menu_side .nav > li {
+        animation: slideInLeft 0.5s ease forwards;
+        animation-delay: calc(var(--delay, 0) * 0.1s);
+      }
+      
+      /* Estados activos */
+      .main_menu_side .nav > li.active > a {
+        background: rgba(255,255,255,0.25) !important;
+        border-left: 4px solid #fff;
+        color: #fff !important;
+        font-weight: 600;
+      }
+    </style>
+  </head>
+
+  <body class="nav-md">
+    <div class="container body">
+      <div class="main_container">
+        <div class="col-md-3 left_col 
+        menu-director">
+          <div class="left_col scroll-view">
+            <div class="navbar nav_title" style="border: 0; text-align: center;">
+              <a href="/" class="site_title">
+                <i class="fa fa-graduation-cap"></i><span>SMA</span>
+              </a>
+            </div>
+
+            <div class="clearfix"></div>
+
+            <!-- menu profile quick info -->
+            <div class="profile clearfix">
+              <div class="profile_pic text-center">
+                <img src="/static/FrWork/admin_lte/build/images/loading.gif" alt="Perfil" class="img-circle profile_img">
+                <div style="position: absolute; top: 5px; right: 5px; width: 12px; height: 12px; background: #4ade80; border-radius: 50%; border: 2px solid #fff;"></div>
+              </div>
+              <div class="profile_info text-center">
+                <span style="font-size: 13px; opacity: 0.9;">Bienvenido/a</span>
+                
+                  <h2 style="margin: 8px 0 5px 0;">Administrador Sistema</h2>
+                  <p class="mb-1" style="margin-bottom: 10px;">
+                    
+                      <i class="fas fa-user-shield" style="margin-right: 6px;"></i> Administrador
+                    
+                  </p>
+                  <small style="color: rgba(255,255,255,0.7); font-size: 11px;">
+                    <i class="fas fa-circle" style="margin-right: 4px; color: #4ade80;"></i> 
+                    En línea
+                  </small>
+                
+              </div>
+            </div>
+            <!-- /menu profile quick info -->
+
+            <br />
+
+            <!-- sidebar menu -->
+            <div id="sidebar-menu" class="main_menu_side hidden-print main_menu">
+              
+                <!-- MENÚ PARA ADMINISTRADORES/DIRECTORES -->
+                <div class="menu_section">
+                  <h3><i class="fas fa-tachometer-alt"></i> ADMINISTRACIÓN</h3>
+                  <ul class="nav side-menu">
+                    <li style="--delay: 1">
+                      <a href="/"><i class="fas fa-home"></i> Panel Administrativo</a>
+                    </li>
+                  </ul>
+                </div>
+                <div class="menu_section">
+                  <h3><i class="fas fa-users-cog"></i> GESTIÓN DE USUARIOS</h3>
+                  <ul class="nav side-menu">
+                    <li style="--delay: 2">
+                      <a href="/agregar"><i class="fas fa-user-plus"></i> Agregar Usuario</a>
+                    </li>
+                    <li style="--delay: 3">
+                      <a href="/modificar"><i class="fas fa-user-edit"></i> Modificar Usuario</a>
+                    </li>
+                    <li style="--delay: 4">
+                      <a href="/eliminar"><i class="fas fa-user-times"></i> Eliminar Usuario</a>
+                    </li>
+                    <li style="--delay: 5">
+                      <a href="/estudiantes/listar/"><i class="fas fa-list-alt"></i> Listar Usuarios</a>
+                    </li>
+                    <li style="--delay: 6">
+                      <a href="/profesores/"><i class="fas fa-chalkboard-teacher"></i> Gestionar Profesores</a>
+                    </li>
+                  </ul>
+                </div>
+                <div class="menu_section">
+                  <h3><i class="fas fa-calendar-plus"></i> GESTIÓN DE EVENTOS</h3>
+                  <ul class="nav side-menu">
+                    <li style="--delay: 7">
+                      <a href="/calendario/"><i class="fas fa-calendar-alt"></i> Gestionar Calendario</a>
+                    </li>
+                  </ul>
+                </div>
+                 <div class="menu_section">
+                  <h3><i class="fas fa-graduation-cap"></i> GESTIÓN ACADÉMICA</h3>
+                  <ul class="nav side-menu">
+                    <li style="--delay: 8">
+                      <a href="/cursos/"><i class="fas fa-chalkboard"></i> Gestionar Cursos</a>
+                    </li>
+                    <li style="--delay: 9">
+                      <a href="/asignaturas/"><i class="fas fa-book-open"></i> Gestionar Asignaturas</a>
+                    </li>
+                    <li style="--delay: 10">
+                      <a href="/cursos/agregar/"><i class="fas fa-plus-square"></i> Nuevo Curso</a>
+                    </li>
+                     <li style="--delay: 11">
+                      <a href="/asignaturas/agregar-completa/"><i class="fas fa-plus-circle"></i> Nueva Asignatura</a>
+                    </li>
+                  </ul>
+                </div>
+                <div class="menu_section">
+                  <h3><i class="fas fa-chart-bar"></i> CALIFICACIONES</h3>
+                  <ul class="nav side-menu">
+                    <li style="--delay: 12">
+                      <a href="/notas/ingresar/"><i class="fas fa-pencil-alt"></i> Gestionar Notas</a>
+                    </li>
+                    <li style="--delay: 13">
+                      <a href="/notas/ver/"><i class="fas fa-chart-pie"></i> Reportes de Notas</a>
+                    </li>
+                  </ul>
+                </div>
+                <div class="menu_section">
+                  <h3><i class="fas fa-clipboard-check"></i> CONTROL DE ASISTENCIA</h3>
+                  <ul class="nav side-menu">
+                    <li style="--delay: 14">
+                      <a href="/asistencia/alumno/registrar/"><i class="fas fa-user-check"></i> Asistencia Estudiantes</a>
+                    </li>
+                    <li style="--delay: 15">
+                      <a href="/asistencia/alumno/ver/"><i class="fas fa-chart-area"></i> Reportes Estudiantes</a>
+                    </li>
+                    <li style="--delay: 16">
+                      <a href="/asistencia/profesor/registrar/"><i class="fas fa-chalkboard-teacher"></i> Asistencia Profesores</a>
+                    </li>
+                    <li style="--delay: 17">
+                      <a href="/asistencia/profesor/ver/"><i class="fas fa-chart-column"></i> Reportes Profesores</a>
+                    </li>
+                  </ul>
+                </div>
+              
+            </div>
+            <!-- /sidebar menu -->
+
+            <!-- /menu footer buttons -->
+            <div class="sidebar-footer hidden-small">
+              <a data-toggle="tooltip" data-placement="top" title="Configuración" href="#" onclick="event.preventDefault();">
+                <span class="fas fa-cog" aria-hidden="true"></span>
+              </a>
+              <a data-toggle="tooltip" data-placement="top" title="Pantalla Completa" href="#" onclick="toggleFullscreen();">
+                <span class="fas fa-expand" aria-hidden="true"></span>
+              </a>
+              <a data-toggle="tooltip" data-placement="top" title="Ayuda" href="#" onclick="event.preventDefault();">
+                <span class="fas fa-question-circle" aria-hidden="true"></span>
+              </a>
+              <a data-toggle="tooltip" data-placement="top" title="Cerrar Sesión" href="/logout/">
+                <span class="fas fa-sign-out-alt" aria-hidden="true"></span>
+              </a>
+            </div>
+                <span class="fa fa-sign-out-alt" aria-hidden="true"></span>
+              </a>
+            </div>
+            <!-- /menu footer buttons -->
+            
+            <script>
+            function toggleFullscreen() {
+              if (!document.fullscreenElement) {
+                document.documentElement.requestFullscreen();
+              } else {
+                if (document.exitFullscreen) {
+                  document.exitFullscreen();
+                }
+              }
+            }
+            </script>
+          </div>
+        </div>
+
+        <!-- top navigation -->
+        <div class="top_nav">
+          <div class="nav_menu">
+            <nav>
+              <ul class="nav navbar-nav navbar-right">
+                
+                <li class="nav-item dropdown">
+                  <a href="#" class="user-profile dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
+                    <i class="fa fa-user"></i> admin
+                    <span class="fa fa-angle-down"></span>
+                  </a>
+                  <ul class="dropdown-menu dropdown-menu-end">
+                    <li>
+                      <a href="/logout/" class="dropdown-item">
+                        <i class="fa fa-sign-out pull-right"></i> Cerrar sesión
+                      </a>
+                    </li>
+                  </ul>
+                </li>
+                
+              </ul>
+            </nav>
+          </div>
+        </div>
+        <!-- /top navigation -->
+
+
+
+        <!-- ****************************************   -->
+
+        
+<div class="right_col" role="main">
+  <div class="container-fluid">
+    <!-- Header con título y botón agregar -->
+    <div class="row mb-4">
+      <div class="col-12">
+        <div class="d-flex align-items-center justify-content-between">
+          <div>
+            <h1 class="mb-1">
+              <i class="fas fa-calendar-alt text-primary me-2"></i>Calendario de Eventos
+            </h1>
+            <p class="text-muted mb-0">Gestiona y visualiza todos los eventos académicos</p>
+          </div>
+          
+          <button type="button" class="btn btn-primary btn-lg" data-bs-toggle="modal" data-bs-target="#modalCrearEvento">
+            <i class="fas fa-plus me-2"></i>Nuevo Evento
+          </button>
+          
+        </div>
+      </div>
+    </div>
+
+    <!-- Filtros -->
+    <div class="row mb-4">
+      <div class="col-12">
+        <div class="card border-0 shadow-sm">
+          <div class="card-body">
+            <form method="get" class="row g-3">
+              <div class="col-md-4">
+                <label class="form-label fw-bold">
+                  <i class="fas fa-calendar me-1 text-primary"></i>Filtrar por fecha
+                </label>
+                <input type="date" name="fecha_filtro" class="form-control" value="">
+              </div>
+              
+              <div class="col-md-4">
+                <label class="form-label fw-bold">
+                  <i class="fas fa-users-class me-1 text-primary"></i>Filtrar por curso
+                </label>
+                <select name="curso_filtro" class="form-select">
+                  <option value="">Todos los cursos</option>
+                  
+                  <option value="15" >
+                    1° BásicoB (2025)
+                  </option>
+                  
+                  <option value="1" >
+                    1° MedioA (2025)
+                  </option>
+                  
+                  <option value="4" >
+                    2° BásicoA (2025)
+                  </option>
+                  
+                  <option value="5" >
+                    3° BásicoB (2025)
+                  </option>
+                  
+                  <option value="2" >
+                    4° MedioF (2025)
+                  </option>
+                  
+                  <option value="6" >
+                    5° BásicoA (2025)
+                  </option>
+                  
+                  <option value="7" >
+                    6° BásicoB (2025)
+                  </option>
+                  
+                  <option value="8" >
+                    8° BásicoA (2025)
+                  </option>
+                  
+                </select>
+              </div>
+              
+              <div class="col-md-2">
+                <label class="form-label">&nbsp;</label>
+                <button type="submit" class="btn btn-primary w-100">
+                  <i class="fas fa-filter me-1"></i>Filtrar
+                </button>
+              </div>
+              <div class="col-md-2">
+                <label class="form-label">&nbsp;</label>
+                <a href="/calendario/" class="btn btn-outline-secondary w-100">
+                  <i class="fas fa-times me-1"></i>Limpiar
+                </a>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Controles de vista del calendario -->
+    <div class="row mb-3">
+      <div class="col-12">
+        <div class="d-flex justify-content-center">
+          <div class="btn-group" role="group">
+            <input type="radio" class="btn-check" name="calendar-view" id="month-view" checked>
+            <label class="btn btn-outline-primary" for="month-view">
+              <i class="fas fa-calendar me-1"></i>Mes
+            </label>
+            <input type="radio" class="btn-check" name="calendar-view" id="week-view">
+            <label class="btn btn-outline-primary" for="week-view">
+              <i class="fas fa-calendar-week me-1"></i>Semana
+            </label>
+            <input type="radio" class="btn-check" name="calendar-view" id="day-view">
+            <label class="btn btn-outline-primary" for="day-view">
+              <i class="fas fa-calendar-day me-1"></i>Día
+            </label>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Calendario principal -->
+    <div class="row mb-4">
+      <div class="col-12">
+        <div class="card border-0 shadow-sm">
+          <div class="card-body">
+            <div id="calendar"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Lista de eventos próximos -->
+    <div class="row">
+      <div class="col-12">
+        <div class="card border-0 shadow-sm">
+          <div class="card-header bg-light border-bottom d-flex align-items-center justify-content-between" data-bs-toggle="collapse" data-bs-target="#eventosProximos" style="cursor: pointer;">
+            <h6 class="mb-0 fw-bold text-dark">
+              <i class="fas fa-list me-2 text-primary"></i>Próximos Eventos
+              <i class="fas fa-chevron-down ms-2 text-muted"></i>
+            </h6>
+            <span class="badge bg-primary">10 eventos</span>
+          </div>
+          <div class="collapse show" id="eventosProximos">
+            <div class="card-body p-0">
+              
+              <div class="table-responsive">
+                <table class="table table-hover mb-0 align-middle">
+                  <thead>
+                    <tr>
+                      <th>Fecha</th>
+                      <th>Título</th>
+                      <th>Tipo</th>
+                      <th>Cursos</th>
+                      
+                      <th>Acciones</th>
+                      
+                    </tr>
+                  </thead>
+                  <tbody>
+                    
+                    <tr>
+                      <td>
+                        <div class="d-flex align-items-center">
+                          <i class="fas fa-calendar me-2" style="color: #9b59b6"></i>
+                          27/06/2025
+                        </div>
+                      </td>
+                      <td>
+                        <div>
+                          <div class="fw-bold">Evento de Prueba - Calendario Corregido</div>
+                          
+                        </div>
+                      </td>
+                      <td>
+                        <span class="badge" style="background-color: #9b59b6; color: white;">
+                          Evento General
+                        </span>
+                      </td>
+                      <td>
+                        
+                        <small class="text-muted">
+                          
+                          1° BásicoB (2025), 
+                          
+                          1° MedioA (2025)
+                          
+                        </small>
+                        
+                      </td>
+                      
+                      <td>
+                        <div class="btn-group btn-group-sm">
+                          <a href="/calendario/editar/19/" class="btn btn-outline-primary" title="Editar">
+                            <i class="fas fa-edit"></i>
+                          </a>
+                          <a href="/calendario/eliminar/19/" class="btn btn-outline-danger" title="Eliminar">
+                            <i class="fas fa-trash"></i>
+                          </a>
+                        </div>
+                      </td>
+                      
+                    </tr>
+                    
+                    <tr>
+                      <td>
+                        <div class="d-flex align-items-center">
+                          <i class="fas fa-calendar me-2" style="color: #e74c3c"></i>
+                          30/06/2025
+                        </div>
+                      </td>
+                      <td>
+                        <div>
+                          <div class="fw-bold">Prueba de Matemáticas</div>
+                          
+                          <small class="text-muted">08:00 - 09:30</small>
+                          
+                        </div>
+                      </td>
+                      <td>
+                        <span class="badge" style="background-color: #e74c3c; color: white;">
+                          Evaluación/Prueba
+                        </span>
+                      </td>
+                      <td>
+                        
+                        <small class="text-muted">
+                          
+                          1° BásicoB (2025), 
+                          
+                          1° MedioA (2025)
+                          
+                        </small>
+                        
+                      </td>
+                      
+                      <td>
+                        <div class="btn-group btn-group-sm">
+                          <a href="/calendario/editar/14/" class="btn btn-outline-primary" title="Editar">
+                            <i class="fas fa-edit"></i>
+                          </a>
+                          <a href="/calendario/eliminar/14/" class="btn btn-outline-danger" title="Eliminar">
+                            <i class="fas fa-trash"></i>
+                          </a>
+                        </div>
+                      </td>
+                      
+                    </tr>
+                    
+                    <tr>
+                      <td>
+                        <div class="d-flex align-items-center">
+                          <i class="fas fa-calendar me-2" style="color: #9b59b6"></i>
+                          30/06/2025
+                        </div>
+                      </td>
+                      <td>
+                        <div>
+                          <div class="fw-bold">Evento de Prueba AJAX</div>
+                          
+                          <small class="text-muted">10:00 - 11:30</small>
+                          
+                        </div>
+                      </td>
+                      <td>
+                        <span class="badge" style="background-color: #9b59b6; color: white;">
+                          Evento General
+                        </span>
+                      </td>
+                      <td>
+                        
+                        <span class="text-success"><i class="fas fa-globe me-1"></i>Todos los cursos</span>
+                        
+                      </td>
+                      
+                      <td>
+                        <div class="btn-group btn-group-sm">
+                          <a href="/calendario/editar/21/" class="btn btn-outline-primary" title="Editar">
+                            <i class="fas fa-edit"></i>
+                          </a>
+                          <a href="/calendario/eliminar/21/" class="btn btn-outline-danger" title="Eliminar">
+                            <i class="fas fa-trash"></i>
+                          </a>
+                        </div>
+                      </td>
+                      
+                    </tr>
+                    
+                    <tr>
+                      <td>
+                        <div class="d-flex align-items-center">
+                          <i class="fas fa-calendar me-2" style="color: #3498db"></i>
+                          01/07/2025
+                        </div>
+                      </td>
+                      <td>
+                        <div>
+                          <div class="fw-bold">Evento para Cursos Específicos</div>
+                          
+                          <small class="text-muted">14:00 - 15:30</small>
+                          
+                        </div>
+                      </td>
+                      <td>
+                        <span class="badge" style="background-color: #3498db; color: white;">
+                          Reunión
+                        </span>
+                      </td>
+                      <td>
+                        
+                        <small class="text-muted">
+                          
+                          1° BásicoB (2025), 
+                          
+                          1° MedioA (2025)
+                          
+                        </small>
+                        
+                      </td>
+                      
+                      <td>
+                        <div class="btn-group btn-group-sm">
+                          <a href="/calendario/editar/22/" class="btn btn-outline-primary" title="Editar">
+                            <i class="fas fa-edit"></i>
+                          </a>
+                          <a href="/calendario/eliminar/22/" class="btn btn-outline-danger" title="Eliminar">
+                            <i class="fas fa-trash"></i>
+                          </a>
+                        </div>
+                      </td>
+                      
+                    </tr>
+                    
+                    <tr>
+                      <td>
+                        <div class="d-flex align-items-center">
+                          <i class="fas fa-calendar me-2" style="color: #3498db"></i>
+                          02/07/2025
+                        </div>
+                      </td>
+                      <td>
+                        <div>
+                          <div class="fw-bold">[TEST] Reunión de Curso 1°A</div>
+                          
+                          <small class="text-muted">15:00 - 16:00</small>
+                          
+                        </div>
+                      </td>
+                      <td>
+                        <span class="badge" style="background-color: #3498db; color: white;">
+                          Reunión
+                        </span>
+                      </td>
+                      <td>
+                        
+                        <small class="text-muted">
+                          
+                          1° MedioA (2025)
+                          
+                        </small>
+                        
+                      </td>
+                      
+                      <td>
+                        <div class="btn-group btn-group-sm">
+                          <a href="/calendario/editar/12/" class="btn btn-outline-primary" title="Editar">
+                            <i class="fas fa-edit"></i>
+                          </a>
+                          <a href="/calendario/eliminar/12/" class="btn btn-outline-danger" title="Eliminar">
+                            <i class="fas fa-trash"></i>
+                          </a>
+                        </div>
+                      </td>
+                      
+                    </tr>
+                    
+                    <tr>
+                      <td>
+                        <div class="d-flex align-items-center">
+                          <i class="fas fa-calendar me-2" style="color: #e74c3c"></i>
+                          02/07/2025
+                        </div>
+                      </td>
+                      <td>
+                        <div>
+                          <div class="fw-bold">Prueba de Ciencias</div>
+                          
+                          <small class="text-muted">10:00 - 11:30</small>
+                          
+                        </div>
+                      </td>
+                      <td>
+                        <span class="badge" style="background-color: #e74c3c; color: white;">
+                          Evaluación/Prueba
+                        </span>
+                      </td>
+                      <td>
+                        
+                        <small class="text-muted">
+                          
+                          1° MedioA (2025), 
+                          
+                          2° BásicoA (2025)
+                          
+                        </small>
+                        
+                      </td>
+                      
+                      <td>
+                        <div class="btn-group btn-group-sm">
+                          <a href="/calendario/editar/18/" class="btn btn-outline-primary" title="Editar">
+                            <i class="fas fa-edit"></i>
+                          </a>
+                          <a href="/calendario/eliminar/18/" class="btn btn-outline-danger" title="Eliminar">
+                            <i class="fas fa-trash"></i>
+                          </a>
+                        </div>
+                      </td>
+                      
+                    </tr>
+                    
+                    <tr>
+                      <td>
+                        <div class="d-flex align-items-center">
+                          <i class="fas fa-calendar me-2" style="color: #9b59b6"></i>
+                          03/07/2025
+                        </div>
+                      </td>
+                      <td>
+                        <div>
+                          <div class="fw-bold">Evaluación de Matemáticas</div>
+                          
+                        </div>
+                      </td>
+                      <td>
+                        <span class="badge" style="background-color: #9b59b6; color: white;">
+                          Evento General
+                        </span>
+                      </td>
+                      <td>
+                        
+                        <small class="text-muted">
+                          
+                        </small>
+                        
+                      </td>
+                      
+                      <td>
+                        <div class="btn-group btn-group-sm">
+                          <a href="/calendario/editar/3/" class="btn btn-outline-primary" title="Editar">
+                            <i class="fas fa-edit"></i>
+                          </a>
+                          <a href="/calendario/eliminar/3/" class="btn btn-outline-danger" title="Eliminar">
+                            <i class="fas fa-trash"></i>
+                          </a>
+                        </div>
+                      </td>
+                      
+                    </tr>
+                    
+                    <tr>
+                      <td>
+                        <div class="d-flex align-items-center">
+                          <i class="fas fa-calendar me-2" style="color: #9b59b6"></i>
+                          04/07/2025
+                        </div>
+                      </td>
+                      <td>
+                        <div>
+                          <div class="fw-bold">Prueba</div>
+                          
+                        </div>
+                      </td>
+                      <td>
+                        <span class="badge" style="background-color: #9b59b6; color: white;">
+                          Evento General
+                        </span>
+                      </td>
+                      <td>
+                        
+                        <small class="text-muted">
+                          
+                        </small>
+                        
+                      </td>
+                      
+                      <td>
+                        <div class="btn-group btn-group-sm">
+                          <a href="/calendario/editar/1/" class="btn btn-outline-primary" title="Editar">
+                            <i class="fas fa-edit"></i>
+                          </a>
+                          <a href="/calendario/eliminar/1/" class="btn btn-outline-danger" title="Eliminar">
+                            <i class="fas fa-trash"></i>
+                          </a>
+                        </div>
+                      </td>
+                      
+                    </tr>
+                    
+                    <tr>
+                      <td>
+                        <div class="d-flex align-items-center">
+                          <i class="fas fa-calendar me-2" style="color: #3498db"></i>
+                          04/07/2025
+                        </div>
+                      </td>
+                      <td>
+                        <div>
+                          <div class="fw-bold">[TEST] Reunión de Apoderados</div>
+                          
+                          <small class="text-muted">19:00 - 20:30</small>
+                          
+                        </div>
+                      </td>
+                      <td>
+                        <span class="badge" style="background-color: #3498db; color: white;">
+                          Reunión
+                        </span>
+                      </td>
+                      <td>
+                        
+                        <span class="text-success"><i class="fas fa-globe me-1"></i>Todos los cursos</span>
+                        
+                      </td>
+                      
+                      <td>
+                        <div class="btn-group btn-group-sm">
+                          <a href="/calendario/editar/10/" class="btn btn-outline-primary" title="Editar">
+                            <i class="fas fa-edit"></i>
+                          </a>
+                          <a href="/calendario/eliminar/10/" class="btn btn-outline-danger" title="Eliminar">
+                            <i class="fas fa-trash"></i>
+                          </a>
+                        </div>
+                      </td>
+                      
+                    </tr>
+                    
+                    <tr>
+                      <td>
+                        <div class="d-flex align-items-center">
+                          <i class="fas fa-calendar me-2" style="color: #3498db"></i>
+                          04/07/2025
+                        </div>
+                      </td>
+                      <td>
+                        <div>
+                          <div class="fw-bold">Reunión de Apoderados</div>
+                          
+                          <small class="text-muted">19:00 - 20:30</small>
+                          
+                        </div>
+                      </td>
+                      <td>
+                        <span class="badge" style="background-color: #3498db; color: white;">
+                          Reunión
+                        </span>
+                      </td>
+                      <td>
+                        
+                        <span class="text-success"><i class="fas fa-globe me-1"></i>Todos los cursos</span>
+                        
+                      </td>
+                      
+                      <td>
+                        <div class="btn-group btn-group-sm">
+                          <a href="/calendario/editar/15/" class="btn btn-outline-primary" title="Editar">
+                            <i class="fas fa-edit"></i>
+                          </a>
+                          <a href="/calendario/eliminar/15/" class="btn btn-outline-danger" title="Eliminar">
+                            <i class="fas fa-trash"></i>
+                          </a>
+                        </div>
+                      </td>
+                      
+                    </tr>
+                    
+                  </tbody>
+                </table>
+              </div>
+              
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<!-- Modal para crear evento -->
+<div class="modal fade" id="modalCrearEvento" tabindex="-1" aria-labelledby="modalCrearEventoLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header bg-gradient-primary text-white">
+        <h5 class="modal-title" id="modalCrearEventoLabel">
+          <i class="fas fa-calendar-plus me-2"></i>Crear Nuevo Evento
+        </h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <form id="formCrearEvento">
+        <input type="hidden" name="csrfmiddlewaretoken" value="JiLvob0H1705x79DfxRUxhtRKY342wxqYo3cvUpdbLM8pSZU0adAeq3l55QgzXjD">
+        <div class="modal-body">
+          <div class="row g-3">
+            <div class="col-md-8">
+              <label class="form-label fw-bold">
+                <i class="fas fa-heading me-1 text-primary"></i>Título del evento *
+              </label>
+              <input type="text" name="titulo" class="form-control" placeholder="Ej: Prueba de Matemáticas" required>
+            </div>
+            <div class="col-md-4">
+              <label class="form-label fw-bold">
+                <i class="fas fa-calendar me-1 text-primary"></i>Fecha *
+              </label>
+              <input type="date" name="fecha" class="form-control" required>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label fw-bold">
+                <i class="fas fa-clock me-1 text-primary"></i>Hora inicio
+              </label>
+              <input type="time" name="hora_inicio" id="hora_inicio" class="form-control" placeholder="Opcional">
+              <div class="invalid-feedback" id="error_hora_inicio"></div>
+              <small class="form-text text-muted">Formato: HH:MM (opcional)</small>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label fw-bold">
+                <i class="fas fa-clock me-1 text-primary"></i>Hora fin
+              </label>
+              <input type="time" name="hora_fin" id="hora_fin" class="form-control" placeholder="Opcional">
+              <div class="invalid-feedback" id="error_hora_fin"></div>
+              <small class="form-text text-muted">Debe ser mayor que hora inicio</small>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label fw-bold">
+                <i class="fas fa-tag me-1 text-primary"></i>Tipo de evento
+              </label>
+              <select name="tipo_evento" class="form-select">
+                
+                <option value="general">Evento General</option>
+                
+                <option value="evaluacion">Evaluación/Prueba</option>
+                
+                <option value="reunion">Reunión</option>
+                
+                <option value="actividad">Actividad Escolar</option>
+                
+                <option value="administrativo">Administrativo</option>
+                
+                <option value="otro">Otro</option>
+                
+              </select>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label fw-bold">
+                <i class="fas fa-flag me-1 text-warning"></i>Prioridad
+              </label>
+              <select name="prioridad" class="form-select">
+                
+                <option value="baja" >Baja</option>
+                
+                <option value="media" selected>Media</option>
+                
+                <option value="alta" >Alta</option>
+                
+              </select>
+            </div>
+            <div class="col-12">
+              <label class="form-label fw-bold">
+                <i class="fas fa-align-left me-1 text-primary"></i>Descripción
+              </label>
+              <textarea name="descripcion" class="form-control" rows="3" placeholder="Descripción detallada del evento"></textarea>
+            </div>
+            <div class="col-12">
+              <label class="form-label fw-bold">
+                <i class="fas fa-users me-1 text-primary"></i>Dirigido a
+              </label>
+              <div class="form-check mb-2">
+                <input class="form-check-input" type="radio" name="dirigido_a" id="dirigido_todos" value="todos" checked>
+                <label class="form-check-label" for="dirigido_todos">
+                  <i class="fas fa-globe me-1 text-success"></i>Todos los cursos
+                </label>
+              </div>
+              
+              <div class="form-check mb-2">
+                <input class="form-check-input" type="radio" name="dirigido_a" id="dirigido_especificos" value="cursos_especificos">
+                <label class="form-check-label" for="dirigido_especificos">
+                  <i class="fas fa-users-class me-1 text-primary"></i>Cursos específicos
+                </label>
+              </div>
+              <div id="cursosEspecificos" class="mt-3 p-3 bg-light rounded border" style="display: none;">
+                <label class="form-label fw-bold small text-primary">
+                  <i class="fas fa-check-square me-1"></i>Seleccionar cursos:
+                </label>
+                <div class="row">
+                  
+                  <div class="col-md-6 mb-2">
+                    <div class="form-check p-2 border rounded hover-bg-primary">
+                      <input class="form-check-input" type="checkbox" name="cursos_especificos" value="15" id="curso_15">
+                      <label class="form-check-label w-100" for="curso_15" style="cursor: pointer;">
+                        <div class="d-flex align-items-center">
+                          <span class="badge bg-secondary me-2">1° Básico</span>
+                          <div class="flex-grow-1">
+                            <div class="fw-bold">B</div>
+                            
+                            <small class="text-muted">Prof. Carlos Sánchez</small>
+                            
+                          </div>
+                        </div>
+                      </label>
+                    </div>
+                  </div>
+                  
+                  <div class="col-md-6 mb-2">
+                    <div class="form-check p-2 border rounded hover-bg-primary">
+                      <input class="form-check-input" type="checkbox" name="cursos_especificos" value="1" id="curso_1">
+                      <label class="form-check-label w-100" for="curso_1" style="cursor: pointer;">
+                        <div class="d-flex align-items-center">
+                          <span class="badge bg-secondary me-2">1° Medio</span>
+                          <div class="flex-grow-1">
+                            <div class="fw-bold">A</div>
+                            
+                            <small class="text-muted">Prof. Carlos Sánchez</small>
+                            
+                          </div>
+                        </div>
+                      </label>
+                    </div>
+                  </div>
+                  
+                  <div class="col-md-6 mb-2">
+                    <div class="form-check p-2 border rounded hover-bg-primary">
+                      <input class="form-check-input" type="checkbox" name="cursos_especificos" value="4" id="curso_4">
+                      <label class="form-check-label w-100" for="curso_4" style="cursor: pointer;">
+                        <div class="d-flex align-items-center">
+                          <span class="badge bg-secondary me-2">2° Básico</span>
+                          <div class="flex-grow-1">
+                            <div class="fw-bold">A</div>
+                            
+                            <small class="text-muted">Prof. Elena Torres</small>
+                            
+                          </div>
+                        </div>
+                      </label>
+                    </div>
+                  </div>
+                  
+                  <div class="col-md-6 mb-2">
+                    <div class="form-check p-2 border rounded hover-bg-primary">
+                      <input class="form-check-input" type="checkbox" name="cursos_especificos" value="5" id="curso_5">
+                      <label class="form-check-label w-100" for="curso_5" style="cursor: pointer;">
+                        <div class="d-flex align-items-center">
+                          <span class="badge bg-secondary me-2">3° Básico</span>
+                          <div class="flex-grow-1">
+                            <div class="fw-bold">B</div>
+                            
+                            <small class="text-muted">Prof. Roberto Mendoza</small>
+                            
+                          </div>
+                        </div>
+                      </label>
+                    </div>
+                  </div>
+                  
+                  <div class="col-md-6 mb-2">
+                    <div class="form-check p-2 border rounded hover-bg-primary">
+                      <input class="form-check-input" type="checkbox" name="cursos_especificos" value="2" id="curso_2">
+                      <label class="form-check-label w-100" for="curso_2" style="cursor: pointer;">
+                        <div class="d-flex align-items-center">
+                          <span class="badge bg-secondary me-2">4° Medio</span>
+                          <div class="flex-grow-1">
+                            <div class="fw-bold">F</div>
+                            
+                            <small class="text-muted">Prof. Carlos Sánchez</small>
+                            
+                          </div>
+                        </div>
+                      </label>
+                    </div>
+                  </div>
+                  
+                  <div class="col-md-6 mb-2">
+                    <div class="form-check p-2 border rounded hover-bg-primary">
+                      <input class="form-check-input" type="checkbox" name="cursos_especificos" value="6" id="curso_6">
+                      <label class="form-check-label w-100" for="curso_6" style="cursor: pointer;">
+                        <div class="d-flex align-items-center">
+                          <span class="badge bg-secondary me-2">5° Básico</span>
+                          <div class="flex-grow-1">
+                            <div class="fw-bold">A</div>
+                            
+                            <small class="text-muted">Prof. Carlos Sánchez</small>
+                            
+                          </div>
+                        </div>
+                      </label>
+                    </div>
+                  </div>
+                  
+                  <div class="col-md-6 mb-2">
+                    <div class="form-check p-2 border rounded hover-bg-primary">
+                      <input class="form-check-input" type="checkbox" name="cursos_especificos" value="7" id="curso_7">
+                      <label class="form-check-label w-100" for="curso_7" style="cursor: pointer;">
+                        <div class="d-flex align-items-center">
+                          <span class="badge bg-secondary me-2">6° Básico</span>
+                          <div class="flex-grow-1">
+                            <div class="fw-bold">B</div>
+                            
+                            <small class="text-muted">Prof. Elena Torres</small>
+                            
+                          </div>
+                        </div>
+                      </label>
+                    </div>
+                  </div>
+                  
+                  <div class="col-md-6 mb-2">
+                    <div class="form-check p-2 border rounded hover-bg-primary">
+                      <input class="form-check-input" type="checkbox" name="cursos_especificos" value="8" id="curso_8">
+                      <label class="form-check-label w-100" for="curso_8" style="cursor: pointer;">
+                        <div class="d-flex align-items-center">
+                          <span class="badge bg-secondary me-2">8° Básico</span>
+                          <div class="flex-grow-1">
+                            <div class="fw-bold">A</div>
+                            
+                            <small class="text-muted">Prof. Roberto Mendoza</small>
+                            
+                          </div>
+                        </div>
+                      </label>
+                    </div>
+                  </div>
+                  
+                </div>
+                <small class="text-muted mt-2 d-block">
+                  <i class="fas fa-info-circle me-1"></i>Selecciona uno o varios cursos para este evento
+                </small>
+              </div>
+              
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+            <i class="fas fa-times me-1"></i>Cancelar
+          </button>
+          <button type="submit" class="btn btn-primary">
+            <i class="fas fa-save me-1"></i>Crear Evento
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+
+<!-- FullCalendar CSS y JS -->
+<link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/main.min.css" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/main.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/locales/es.min.js"></script>
+
+<style>
+.bg-gradient-primary {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+}
+
+#calendar {
+  background: transparent;
+  border-radius: 8px;
+  min-height: 500px;
+  width: 100%;
+}
+
+.fc {
+  background: #fff;
+  border: 1px solid #dee2e6;
+  border-radius: 8px;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+  padding: 15px;
+}
+
+.fc-toolbar {
+  margin-bottom: 1rem !important;
+}
+
+.fc-toolbar-chunk {
+  display: flex;
+  align-items: center;
+}
+
+.fc-view-harness {
+  background: transparent;
+}
+
+.fc-toolbar-title {
+  font-size: 1.3em !important;
+  font-weight: 700 !important;
+  color: #495057 !important;
+}
+
+.fc-button {
+  background: #fff !important;
+  border: 2px solid #dee2e6 !important;
+  color: #495057 !important;
+  border-radius: 8px !important;
+  font-weight: 600 !important;
+  padding: 0.5em 1em !important;
+  margin: 0 0.25em !important;
+  transition: all 0.2s ease !important;
+}
+
+.fc-button:hover {
+  background: #e9ecef !important;
+  border-color: #adb5bd !important;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1) !important;
+}
+
+.fc-event {
+  padding: 6px 10px !important;
+  font-size: 0.9rem !important;
+  font-weight: 500 !important;
+  border-radius: 4px !important;
+  margin-bottom: 2px !important;
+  transition: all 0.2s ease !important;
+  cursor: pointer !important;
+  line-height: 1.2 !important;
+  opacity: 0.9 !important;
+}
+
+.fc-event:hover {
+  opacity: 1 !important;
+  transform: translateY(-1px) !important;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.15) !important;
+  z-index: 1000 !important;
+}
+
+.fc-day-today {
+  background-color: rgba(0, 123, 255, 0.08) !important;
+  position: relative;
+}
+
+.fc-day-today::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, #007bff, #0056b3);
+  border-radius: 0 0 3px 3px;
+}
+
+.fc-day:hover {
+  background-color: rgba(0,123,255,0.05) !important;
+  cursor: pointer;
+}
+
+.fc-daygrid-day-number {
+  color: #495057 !important;
+  font-weight: 600 !important;
+  padding: 8px !important;
+}
+
+.fc-col-header-cell {
+  background: linear-gradient(135deg, #e9ecef 0%, #f8f9fa 100%) !important;
+  border-bottom: 2px solid #dee2e6 !important;
+  font-weight: 700 !important;
+  color: #495057 !important;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.hover-bg-primary:hover {
+  background-color: rgba(0, 123, 255, 0.05) !important;
+  transition: background-color 0.2s ease;
+}
+
+.form-check:hover .form-check-label {
+  color: #007bff;
+}
+
+#cursosEspecificos {
+  transition: all 0.3s ease;
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+#cursosEspecificos .form-check {
+  transition: all 0.2s ease;
+}
+
+#cursosEspecificos .form-check:hover {
+  transform: translateX(2px);
+}
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  // Datos de eventos desde Django
+  const eventosData = [{"id": 8, "title": "Taller de Padres", "start": "2025-08-07", "description": "Taller sobre t\u00e9cnicas de estudio y apoyo acad\u00e9mico para padres y apoderados.", "backgroundColor": "#9b59b6", "borderColor": "#9b59b6", "textColor": "#fff", "url": null}, {"id": 7, "title": "Feria de Ciencias", "start": "2025-07-31", "description": "Muestra de proyectos cient\u00edficos realizados por estudiantes de todos los niveles.", "backgroundColor": "#9b59b6", "borderColor": "#9b59b6", "textColor": "#fff", "url": null}, {"id": 6, "title": "Simulacro PSU", "start": "2025-07-24", "description": "Simulacro de la Prueba de Selecci\u00f3n Universitaria para estudiantes de 4\u00b0 Medio.", "backgroundColor": "#9b59b6", "borderColor": "#9b59b6", "textColor": "#fff", "url": null}, {"id": 5, "title": "Consejo de Profesores", "start": "2025-07-17", "description": "Reuni\u00f3n mensual del consejo de profesores para revisar temas acad\u00e9micos.", "backgroundColor": "#9b59b6", "borderColor": "#9b59b6", "textColor": "#fff", "url": null}, {"id": 17, "title": "Entrega de Notas", "start": "2025-07-11", "description": "Entrega de calificaciones del per\u00edodo", "backgroundColor": "#f39c12", "borderColor": "#f39c12", "textColor": "#fff", "url": null}, {"id": 11, "title": "[TEST] D\u00eda del Alumno", "start": "2025-07-11", "description": "Celebraci\u00f3n del d\u00eda del alumno con actividades especiales", "backgroundColor": "#2ecc71", "borderColor": "#2ecc71", "textColor": "#fff", "url": null}, {"id": 4, "title": "D\u00eda del Alumno", "start": "2025-07-10", "description": "Celebraci\u00f3n del d\u00eda del alumno con actividades especiales y recreativas.", "backgroundColor": "#9b59b6", "borderColor": "#9b59b6", "textColor": "#fff", "url": null}, {"id": 13, "title": "[TEST] Prueba de Matem\u00e1ticas", "start": "2025-07-07", "description": "Evaluaci\u00f3n de \u00e1lgebra y geometr\u00eda", "backgroundColor": "#e74c3c", "borderColor": "#e74c3c", "textColor": "#fff", "url": null}, {"id": 16, "title": "D\u00eda del Estudiante", "start": "2025-07-07", "description": "Celebraci\u00f3n del d\u00eda del estudiante con actividades especiales", "backgroundColor": "#2ecc71", "borderColor": "#2ecc71", "textColor": "#fff", "url": null}, {"id": 9, "title": "Entrega de Notas", "start": "2025-07-06", "description": "Fecha l\u00edmite para la entrega de calificaciones del primer trimestre.", "backgroundColor": "#9b59b6", "borderColor": "#9b59b6", "textColor": "#fff", "url": null}, {"id": 10, "title": "[TEST] Reuni\u00f3n de Apoderados", "start": "2025-07-04", "description": "Reuni\u00f3n general de apoderados del colegio", "backgroundColor": "#3498db", "borderColor": "#3498db", "textColor": "#fff", "url": null}, {"id": 15, "title": "Reuni\u00f3n de Apoderados", "start": "2025-07-04", "description": "Reuni\u00f3n mensual con los padres y apoderados", "backgroundColor": "#3498db", "borderColor": "#3498db", "textColor": "#fff", "url": null}, {"id": 20, "title": "Evento de Prueba - Selecci\u00f3n de Cursos", "start": "2025-07-04", "description": "Evento creado para probar la funcionalidad de selecci\u00f3n de cursos espec\u00edficos", "backgroundColor": "#e74c3c", "borderColor": "#e74c3c", "textColor": "#fff", "url": null}, {"id": 1, "title": "Prueba", "start": "2025-07-04", "description": "asd", "backgroundColor": "#9b59b6", "borderColor": "#9b59b6", "textColor": "#fff", "url": null}, {"id": 3, "title": "Evaluaci\u00f3n de Matem\u00e1ticas", "start": "2025-07-03", "description": "Prueba de contenidos del primer semestre de matem\u00e1ticas.", "backgroundColor": "#9b59b6", "borderColor": "#9b59b6", "textColor": "#fff", "url": null}, {"id": 12, "title": "[TEST] Reuni\u00f3n de Curso 1\u00b0A", "start": "2025-07-02", "description": "Reuni\u00f3n espec\u00edfica del curso 1\u00b0 Medio A", "backgroundColor": "#3498db", "borderColor": "#3498db", "textColor": "#fff", "url": null}, {"id": 18, "title": "Prueba de Ciencias", "start": "2025-07-02", "description": "Evaluaci\u00f3n de biolog\u00eda y qu\u00edmica", "backgroundColor": "#e74c3c", "borderColor": "#e74c3c", "textColor": "#fff", "url": null}, {"id": 22, "title": "Evento para Cursos Espec\u00edficos", "start": "2025-07-01", "description": "Evento solo para cursos seleccionados", "backgroundColor": "#3498db", "borderColor": "#3498db", "textColor": "#fff", "url": null}, {"id": 21, "title": "Evento de Prueba AJAX", "start": "2025-06-30", "description": "Este evento fue creado mediante una prueba AJAX automatizada", "backgroundColor": "#9b59b6", "borderColor": "#9b59b6", "textColor": "#fff", "url": null}, {"id": 14, "title": "Prueba de Matem\u00e1ticas", "start": "2025-06-30", "description": "Evaluaci\u00f3n de contenidos del primer semestre", "backgroundColor": "#e74c3c", "borderColor": "#e74c3c", "textColor": "#fff", "url": null}, {"id": 19, "title": "Evento de Prueba - Calendario Corregido", "start": "2025-06-27", "description": "Este es un evento creado para probar las correcciones", "backgroundColor": "#9b59b6", "borderColor": "#9b59b6", "textColor": "#fff", "url": null}];
+  const calendarEl = document.getElementById('calendar');
+  
+  if (!calendarEl) return;
+  
+  // Inicializar FullCalendar
+  const calendar = new FullCalendar.Calendar(calendarEl, {
+    locale: 'es',
+    initialView: 'dayGridMonth',
+    height: 'auto',
+    aspectRatio: 1.8,
+    headerToolbar: {
+      left: 'prev,next today',
+      center: 'title',
+      right: ''
+    },
+    buttonText: {
+      today: 'Hoy',
+      month: 'Mes',
+      week: 'Semana',
+      day: 'Día'
+    },
+    events: eventosData,
+    eventClick: function(info) {
+      // Mostrar detalles del evento o redirigir a editar
+      const evento = info.event;
+      console.log('Evento clickeado:', evento);
+      // Puedes implementar un modal de detalles aquí
+    },
+    dateClick: function(info) {
+      
+      // Pre-llenar fecha en el modal y abrirlo
+      document.querySelector('#modalCrearEvento input[name="fecha"]').value = info.dateStr;
+      const modal = new bootstrap.Modal(document.getElementById('modalCrearEvento'));
+      modal.show();
+      
+    },
+    eventMouseEnter: function(info) {
+      info.el.style.transform = 'scale(1.05)';
+      info.el.style.transition = 'transform 0.2s ease';
+    },
+    eventMouseLeave: function(info) {
+      info.el.style.transform = 'scale(1)';
+    },
+    dayMaxEvents: 3,
+    moreLinkClick: 'popover',
+    eventDisplay: 'block',
+    loading: function(isLoading) {
+      // Mostrar/ocultar loader si es necesario
+    }
+  });
+  
+  calendar.render();
+  
+  // Cambiar vista con los radio buttons
+  document.querySelectorAll('input[name="calendar-view"]').forEach(radio => {
+    radio.addEventListener('change', function() {
+      if (this.id === 'month-view') calendar.changeView('dayGridMonth');
+      else if (this.id === 'week-view') calendar.changeView('timeGridWeek');
+      else if (this.id === 'day-view') calendar.changeView('timeGridDay');
+    });
+  });
+  
+  
+  console.log('🔧 Inicializando funcionalidad de crear eventos...');
+  
+  // Verificar elementos esenciales
+  const formCrearEvento = document.getElementById('formCrearEvento');
+  const dirigidoEspecificos = document.getElementById('dirigido_especificos');
+  const cursosDiv = document.getElementById('cursosEspecificos');
+  
+  console.log('📋 Elementos encontrados:', {
+    formCrearEvento: !!formCrearEvento,
+    dirigidoEspecificos: !!dirigidoEspecificos,
+    cursosDiv: !!cursosDiv
+  });
+  
+  if (cursosDiv) {
+    const checkboxes = cursosDiv.querySelectorAll('input[name="cursos_especificos"]');
+    console.log('📚 Checkboxes de cursos encontrados:', checkboxes.length);
+  }
+  
+  // Validación de horas
+  function validarHoras() {
+    const horaInicio = document.getElementById('hora_inicio');
+    const horaFin = document.getElementById('hora_fin');
+    const errorInicio = document.getElementById('error_hora_inicio');
+    const errorFin = document.getElementById('error_hora_fin');
+    
+    if (!horaInicio || !horaFin || !errorInicio || !errorFin) {
+      console.log('⚠️ Elementos de validación de horas no encontrados');
+      return true; // No validar si no están los elementos
+    }
+    
+    // Limpiar errores previos
+    horaInicio.classList.remove('is-invalid');
+    horaFin.classList.remove('is-invalid');
+    errorInicio.textContent = '';
+    errorFin.textContent = '';
+    
+    // Solo validar si ambas horas tienen valor
+    if (horaInicio.value && horaFin.value) {
+      console.log(`🕐 Validando horas: ${horaInicio.value} vs ${horaFin.value}`);
+      
+      if (horaInicio.value >= horaFin.value) {
+        console.log('❌ Error: Hora inicio >= hora fin');
+        
+        horaInicio.classList.add('is-invalid');
+        horaFin.classList.add('is-invalid');
+        errorInicio.textContent = 'La hora de inicio debe ser menor que la hora de fin';
+        errorFin.textContent = 'La hora de fin debe ser mayor que la hora de inicio';
+        
+        return false;
+      } else {
+        console.log('✅ Horas válidas');
+      }
+    }
+    return true;
+  }
+  
+  // Agregar eventos de validación con verificación de elementos
+  const horaInicioInput = document.getElementById('hora_inicio');
+  const horaFinInput = document.getElementById('hora_fin');
+  
+  if (horaInicioInput && horaFinInput) {
+    horaInicioInput.addEventListener('change', validarHoras);
+    horaFinInput.addEventListener('change', validarHoras);
+    horaInicioInput.addEventListener('blur', validarHoras);
+    horaFinInput.addEventListener('blur', validarHoras);
+    console.log('✅ Eventos de validación de horas configurados');
+  } else {
+    console.log('⚠️ No se pudieron configurar los eventos de validación de horas');
+  }
+  
+  // Validar cursos seleccionados
+  function validarCursosEspecificos() {
+    const dirigidoEspecificos = document.getElementById('dirigido_especificos');
+    
+    if (!dirigidoEspecificos) {
+      console.log('⚠️ Radio button dirigido_especificos no encontrado');
+      return true;
+    }
+    
+    const checkboxes = document.querySelectorAll('input[name="cursos_especificos"]:checked');
+    
+    console.log(`📋 Validando cursos: dirigido_especificos.checked = ${dirigidoEspecificos.checked}, checkboxes.length = ${checkboxes.length}`);
+    
+    if (dirigidoEspecificos.checked && checkboxes.length === 0) {
+      showAlert('warning', 'Debes seleccionar al menos un curso específico');
+      
+      // Resaltar la sección de cursos específicos
+      const cursosDiv = document.getElementById('cursosEspecificos');
+      if (cursosDiv) {
+        cursosDiv.style.border = '2px solid #ffc107';
+        cursosDiv.style.borderRadius = '8px';
+        cursosDiv.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        
+        // Quitar el resaltado después de 3 segundos
+        setTimeout(() => {
+          cursosDiv.style.border = '';
+        }, 3000);
+      }
+      
+      return false;
+    }
+    return true;
+  }
+      // Hacer scroll al selector de cursos
+      document.getElementById('cursosEspecificos').scrollIntoView({ behavior: 'smooth' });
+      return false;
+    }
+    return true;
+  }
+  
+  // Manejar formulario de crear evento con validaciones mejoradas
+  const formCrearEvento = document.getElementById('formCrearEvento');
+  if (formCrearEvento) {
+    formCrearEvento.addEventListener('submit', function(e) {
+      e.preventDefault();
+      
+      console.log('📝 Enviando formulario...');
+      
+      // Validación de campos básicos
+      const titulo = this.querySelector('input[name="titulo"]').value.trim();
+      const fecha = this.querySelector('input[name="fecha"]').value;
+      
+      if (!titulo) {
+        showAlert('danger', 'El título del evento es obligatorio');
+        this.querySelector('input[name="titulo"]').focus();
+        return;
+      }
+      
+      if (!fecha) {
+        showAlert('danger', 'La fecha del evento es obligatoria');
+        this.querySelector('input[name="fecha"]').focus();
+        return;
+      }
+      
+      // Validar horas
+      if (!validarHoras()) {
+        showAlert('danger', 'Por favor corrige los errores en las horas');
+        return;
+      }
+      
+      // Validar cursos específicos
+      if (!validarCursosEspecificos()) {
+        return;
+      }
+      
+      // Preparar datos del formulario
+      const formData = new FormData(this);
+      const submitBtn = this.querySelector('button[type="submit"]');
+      const originalText = submitBtn.innerHTML;
+      
+      // Mostrar estado de carga
+      submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Creando evento...';
+      submitBtn.disabled = true;
+      
+      // Enviar datos con AJAX
+      fetch('/calendario/', {
+        method: 'POST',
+        body: formData,
+        headers: {
+          'X-Requested-With': 'XMLHttpRequest',
+          'X-CSRFToken': formData.get('csrfmiddlewaretoken')
+        }
+      })
+      .then(response => response.json())
+      .then(data => {
+        if (data.success) {
+          // Cerrar modal
+          const modal = bootstrap.Modal.getInstance(document.getElementById('modalCrearEvento'));
+          modal.hide();
+          
+          // Mostrar mensaje de éxito
+          showAlert('success', '¡Evento creado exitosamente!');
+          
+          // Recargar página para mostrar el nuevo evento
+          setTimeout(() => {
+            window.location.reload();
+          }, 1500);
+        } else {
+          showAlert('danger', 'Error: ' + (data.error || 'No se pudo crear el evento'));
+        }
+      })
+      .catch(error => {
+        console.error('Error:', error);
+        showAlert('danger', 'Error de conexión. Por favor, inténtalo de nuevo.');
+      })
+      .finally(() => {
+        // Restaurar botón
+        submitBtn.innerHTML = originalText;
+        submitBtn.disabled = false;
+      });
+    });
+  } else {
+    console.log('⚠️ Formulario de crear evento no encontrado');
+  }
+  
+  // Mostrar/ocultar selector de cursos específicos
+  document.querySelectorAll('input[name="dirigido_a"]').forEach(radio => {
+    radio.addEventListener('change', function() {
+      const cursosDiv = document.getElementById('cursosEspecificos');
+      
+      if (!cursosDiv) {
+        console.log('⚠️ Div de cursos específicos no encontrado');
+        return;
+      }
+      
+      console.log('📻 Radio changed:', this.value); // Debug
+      
+      if (this.value === 'cursos_especificos') {
+        cursosDiv.style.display = 'block';
+        cursosDiv.style.opacity = '1';
+        cursosDiv.style.transition = 'opacity 0.3s ease';
+        console.log('✅ Mostrando cursos específicos'); // Debug
+        
+        // Forzar re-render para asegurar visibilidad
+        setTimeout(() => {
+          cursosDiv.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }, 100);
+        
+      } else {
+        cursosDiv.style.display = 'none';
+        cursosDiv.style.opacity = '0';
+        console.log('❌ Ocultando cursos específicos'); // Debug
+        
+        // Desmarcar todos los checkboxes cuando se oculta
+        const checkboxes = cursosDiv.querySelectorAll('input[type="checkbox"]');
+        checkboxes.forEach(cb => {
+          cb.checked = false;
+          console.log(`📋 Desmarcando checkbox: ${cb.value}`);
+        });
+      }
+    });
+  });
+
+  // Inicializar estado del selector de cursos con verificación
+  const dirigidoTodos = document.getElementById('dirigido_todos');
+  const cursosDiv = document.getElementById('cursosEspecificos');
+  
+  if (dirigidoTodos && cursosDiv) {
+    if (dirigidoTodos.checked) {
+      cursosDiv.style.display = 'none';
+    }
+    console.log('✅ Estado inicial del selector de cursos configurado');
+  } else {
+    console.log('⚠️ No se pudo configurar el estado inicial del selector de cursos');
+  }
+
+  // Limpiar modal cuando se cierra y configurar cuando se abre
+  const modalCrearEvento = document.getElementById('modalCrearEvento');
+  if (modalCrearEvento) {
+    modalCrearEvento.addEventListener('shown.bs.modal', function () {
+      console.log('🎯 Modal abierto - configurando elementos');
+      
+      // Verificar elementos críticos
+      const elementos = {
+        formCrearEvento: document.getElementById('formCrearEvento'),
+        dirigidoTodos: document.getElementById('dirigido_todos'),
+        dirigidoEspecificos: document.getElementById('dirigido_especificos'),
+        cursosDiv: document.getElementById('cursosEspecificos'),
+        horaInicio: document.getElementById('hora_inicio'),
+        horaFin: document.getElementById('hora_fin')
+      };
+      
+      console.log('🔍 Elementos encontrados:', elementos);
+      
+      // Asegurar estado inicial correcto
+      if (elementos.dirigidoTodos && elementos.cursosDiv) {
+        elementos.dirigidoTodos.checked = true;
+        elementos.cursosDiv.style.display = 'none';
+      }
+      
+      // Focus en el primer campo
+      const tituloInput = modalCrearEvento.querySelector('input[name="titulo"]');
+      if (tituloInput) {
+        setTimeout(() => tituloInput.focus(), 200);
+      }
+    });
+    
+    modalCrearEvento.addEventListener('hidden.bs.modal', function () {
+      console.log('🎯 Modal cerrado - limpiando formulario');
+      
+      // Resetear formulario
+      const form = document.getElementById('formCrearEvento');
+      if (form) {
+        form.reset();
+      }
+      
+      // Ocultar selector de cursos específicos
+      const cursosDiv = document.getElementById('cursosEspecificos');
+      if (cursosDiv) {
+        cursosDiv.style.display = 'none';
+        cursosDiv.style.border = ''; // Quitar cualquier resaltado
+      }
+      
+      // Marcar "todos los cursos" por defecto
+      const dirigidoTodos = document.getElementById('dirigido_todos');
+      if (dirigidoTodos) {
+        dirigidoTodos.checked = true;
+      }
+      
+      // Limpiar errores
+      document.querySelectorAll('.is-invalid').forEach(el => el.classList.remove('is-invalid'));
+      document.querySelectorAll('.invalid-feedback').forEach(el => el.textContent = '');
+    });
+  }
+  
+});
+
+// Función para mostrar alertas
+function showAlert(type, message) {
+  const alertHtml = `
+    <div class="alert alert-${type} alert-dismissible fade show position-fixed" style="top: 20px; right: 20px; z-index: 9999;">
+      ${message}
+      <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+  `;
+  document.body.insertAdjacentHTML('beforeend', alertHtml);
+  
+  // Auto-remover después de 5 segundos
+  setTimeout(() => {
+    const alert = document.querySelector('.alert');
+    if (alert) {
+      alert.remove();
+    }
+  }, 5000);
+}
+</script>
+
+
+
+        <!-- footer content -->
+        <footer>
+          <div class="pull-right">
+            Gentelella - Bootstrap Admin Template by <a href="https://colorlib.com">Colorlib</a>
+          </div>
+          <div class="clearfix"></div>
+        </footer>
+        <!-- /footer content -->
+      </div>
+    </div>
+
+    <!-- jQuery -->
+    <script src="/static/FrWork/admin_lte/vendors/jquery/dist/jquery.min.js"></script>
+    <!-- Bootstrap -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- FastClick -->
+    <script src="/static/FrWork/admin_lte/vendors/fastclick/lib/fastclick.js"></script>
+    <!-- NProgress -->
+    <script src="/static/FrWork/admin_lte/vendors/nprogress/nprogress.js"></script>
+    <!-- Chart.js -->
+    <script src="/static/FrWork/admin_lte/vendors/Chart.js/dist/Chart.min.js"></script>
+    <!-- gauge.js -->
+    <script src="/static/FrWork/admin_lte/vendors/gauge.js/dist/gauge.min.js"></script>
+    <!-- bootstrap-progressbar -->
+    <script src="/static/FrWork/admin_lte/vendors/bootstrap-progressbar/bootstrap-progressbar.min.js"></script>
+    <!-- iCheck -->
+    <script src="/static/FrWork/admin_lte/vendors/iCheck/icheck.min.js"></script>
+    <!-- Skycons -->
+    <script src="/static/FrWork/admin_lte/vendors/skycons/skycons.js"></script>
+    <!-- Flot -->
+    <script src="/static/FrWork/admin_lte/vendors/Flot/jquery.flot.js"></script>
+    <script src="/static/FrWork/admin_lte/vendors/Flot/jquery.flot.pie.js"></script>
+    <script src="/static/FrWork/admin_lte/vendors/Flot/jquery.flot.time.js"></script>
+    <script src="/static/FrWork/admin_lte/vendors/Flot/jquery.flot.stack.js"></script>
+    <script src="/static/FrWork/admin_lte/vendors/Flot/jquery.flot.resize.js"></script>
+    <!-- Flot plugins -->
+    <script src="/static/FrWork/admin_lte/vendors/flot.orderbars/js/jquery.flot.orderBars.js"></script>
+    <script src="/static/FrWork/admin_lte/vendors/flot-spline/js/jquery.flot.spline.min.js"></script>
+    <script src="/static/FrWork/admin_lte/vendors/flot.curvedlines/curvedLines.js"></script>
+    <!-- DateJS -->
+    <script src="/static/FrWork/admin_lte/vendors/DateJS/build/date.js"></script>
+    <!-- JQVMap -->
+    <script src="/static/FrWork/admin_lte/vendors/jqvmap/dist/jquery.vmap.js"></script>
+    <script src="/static/FrWork/admin_lte/vendors/jqvmap/dist/maps/jquery.vmap.world.js"></script>
+    <script src="/static/FrWork/admin_lte/vendors/jqvmap/examples/js/jquery.vmap.sampledata.js"></script>
+    <!-- bootstrap-daterangepicker -->
+    <script src="/static/FrWork/admin_lte/vendors/moment/min/moment.min.js"></script>
+    <script src="/static/FrWork/admin_lte/vendors/bootstrap-daterangepicker/daterangepicker.js"></script>
+
+    <!-- Custom Theme Scripts -->
+    <script src="/static/FrWork/admin_lte/build/js/custom.min.js"></script>
+	
+  </body>
+</html>

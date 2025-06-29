@@ -1,0 +1,399 @@
+{% extends "index_master.html" %}
+
+{% block content %}
+<div class="right_col" role="main">
+  <div class="container-fluid">
+    <!-- Header -->
+    <div class="row mb-4">
+      <div class="col-12">
+        <div class="page-title">
+          <div class="title_left">
+            <h1><i class="fa fa-users text-primary"></i> Gestión de Usuarios</h1>
+            <p class="text-muted">Lista y administra estudiantes y profesores del sistema</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Navegación de pestañas -->
+    <div class="card border-0 shadow-lg">
+      <div class="card-header bg-gradient-primary text-white">
+        <ul class="nav nav-tabs card-header-tabs" id="userTabs" role="tablist">
+          <li class="nav-item" role="presentation">
+            <button class="nav-link active text-white" id="estudiantes-tab" data-bs-toggle="tab" 
+                    data-bs-target="#estudiantes" type="button" role="tab">
+              <i class="fa fa-graduation-cap me-2"></i>Estudiantes
+              <span class="badge bg-light text-primary ms-2">{{ estudiantes|length }}</span>
+            </button>
+          </li>
+          <li class="nav-item" role="presentation">
+            <button class="nav-link text-white" id="profesores-tab" data-bs-toggle="tab" 
+                    data-bs-target="#profesores" type="button" role="tab">
+              <i class="fa fa-chalkboard-teacher me-2"></i>Profesores
+              <span class="badge bg-light text-primary ms-2">{{ profesores|length }}</span>
+            </button>
+          </li>
+        </ul>
+      </div>
+
+      <div class="card-body p-4">
+        <div class="tab-content" id="userTabsContent">
+          <!-- Tab de Estudiantes -->
+          <div class="tab-pane fade show active" id="estudiantes" role="tabpanel">
+            <!-- Filtros y búsqueda para estudiantes -->
+            <div class="card mb-4 border-0 bg-light">
+              <div class="card-header bg-info text-white">
+                <h5 class="mb-0"><i class="fa fa-filter me-2"></i>Filtros de Búsqueda - Estudiantes</h5>
+              </div>
+              <div class="card-body">
+                <form method="get" class="row g-3" id="filtro-estudiantes">
+                  <input type="hidden" name="tab" value="estudiantes">
+                  
+                  <div class="col-lg-3">
+                    <label class="form-label fw-bold">
+                      <i class="fa fa-search text-muted me-1"></i>Buscar
+                    </label>
+                    <input type="text" name="q_estudiante" class="form-control" 
+                           placeholder="Nombre, apellido o código..." 
+                           value="{{ request.GET.q_estudiante }}">
+                  </div>
+                  
+                  <div class="col-lg-2">
+                    <label class="form-label fw-bold">
+                      <i class="fa fa-venus-mars text-muted me-1"></i>Género
+                    </label>
+                    <select name="genero_estudiante" class="form-select">
+                      <option value="">Todos</option>
+                      <option value="M" {% if request.GET.genero_estudiante == 'M' %}selected{% endif %}>Masculino</option>
+                      <option value="F" {% if request.GET.genero_estudiante == 'F' %}selected{% endif %}>Femenino</option>
+                    </select>
+                  </div>
+                  
+                  <div class="col-lg-2">
+                    <label class="form-label fw-bold">
+                      <i class="fa fa-id-card text-muted me-1"></i>Documento
+                    </label>
+                    <select name="tipo_doc_estudiante" class="form-select">
+                      <option value="">Todos</option>
+                      <option value="DNI" {% if request.GET.tipo_doc_estudiante == 'DNI' %}selected{% endif %}>DNI</option>
+                      <option value="PASAPORTE" {% if request.GET.tipo_doc_estudiante == 'PASAPORTE' %}selected{% endif %}>Pasaporte</option>
+                      <option value="CARNET_EXTRANJERIA" {% if request.GET.tipo_doc_estudiante == 'CARNET_EXTRANJERIA' %}selected{% endif %}>Carnet Extranjería</option>
+                    </select>
+                  </div>
+                  
+                  <div class="col-lg-3">
+                    <label class="form-label fw-bold">
+                      <i class="fa fa-calendar text-muted me-1"></i>Fecha de Ingreso
+                    </label>
+                    <input type="date" name="fecha_ingreso" class="form-control" 
+                           value="{{ request.GET.fecha_ingreso }}">
+                  </div>
+                  
+                  <div class="col-lg-2">
+                    <label class="form-label">&nbsp;</label>
+                    <div class="d-grid gap-2">
+                      <button type="submit" class="btn btn-primary">
+                        <i class="fa fa-search"></i> Filtrar
+                      </button>
+                    </div>
+                  </div>
+                </form>
+              </div>
+            </div>
+
+            <!-- Tabla de estudiantes -->
+            <div class="card border-0">
+              <div class="card-header bg-gradient-info text-white">
+                <div class="row align-items-center">
+                  <div class="col">
+                    <h5 class="mb-0">
+                      <i class="fa fa-graduation-cap me-2"></i>Lista de Estudiantes
+                      {% if estudiantes_filtrados %}
+                        <span class="badge bg-light text-dark ms-2">{{ estudiantes_filtrados|length }} resultados</span>
+                      {% endif %}
+                    </h5>
+                  </div>
+                  <div class="col-auto">
+                    <button class="btn btn-light btn-sm" onclick="exportarEstudiantes()">
+                      <i class="fa fa-download"></i> Exportar
+                    </button>
+                  </div>
+                </div>
+              </div>
+              <div class="card-body p-0">
+                <div class="table-responsive">
+                  <table class="table table-hover mb-0">
+                    <thead class="table-dark">
+                      <tr>
+                        <th style="width: 8%;">ID</th>
+                        <th style="width: 15%;">Código</th>
+                        <th style="width: 25%;">Nombre Completo</th>
+                        <th style="width: 15%;">Documento</th>
+                        <th style="width: 12%;">Género</th>
+                        <th style="width: 15%;">Email</th>
+                        <th style="width: 10%;">Acciones</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {% for estudiante in estudiantes_filtrados %}
+                        <tr>
+                          <td>
+                            <span class="badge bg-primary rounded-pill">{{ estudiante.id }}</span>
+                          </td>
+                          <td>
+                            <div class="d-flex align-items-center">
+                              <div class="avatar-sm bg-primary bg-gradient rounded-circle me-2 d-flex align-items-center justify-content-center">
+                                <i class="fa fa-graduation-cap text-white"></i>
+                              </div>
+                              <span class="fw-bold text-primary">{{ estudiante.codigo_estudiante }}</span>
+                            </div>
+                          </td>
+                          <td>
+                            <div>
+                              <div class="fw-bold">{{ estudiante.primer_nombre }} {{ estudiante.segundo_nombre|default:"" }}</div>
+                              <div class="text-muted small">{{ estudiante.apellido_paterno }} {{ estudiante.apellido_materno|default:"" }}</div>
+                            </div>
+                          </td>
+                          <td>
+                            <div>
+                              <span class="badge bg-light text-dark">{{ estudiante.get_tipo_documento_display }}</span>
+                              <div class="small text-muted mt-1">{{ estudiante.numero_documento }}</div>
+                            </div>
+                          </td>
+                          <td>
+                            <span class="badge bg-{% if estudiante.genero == 'M' %}info{% else %}warning{% endif %}">
+                              {% if estudiante.genero == 'M' %}
+                                <i class="fa fa-mars"></i> Masculino
+                              {% else %}
+                                <i class="fa fa-venus"></i> Femenino
+                              {% endif %}
+                            </span>
+                          </td>
+                          <td>
+                            <a href="mailto:{{ estudiante.email }}" class="text-decoration-none">
+                              <i class="fa fa-envelope text-muted me-1"></i>
+                              <span class="small">{{ estudiante.email|truncatechars:20 }}</span>
+                            </a>
+                          </td>
+                          <td>
+                            <div class="btn-group" role="group">
+                              <a href="{% url 'modificar' %}?tipo=estudiante&id={{ estudiante.id }}" 
+                                 class="btn btn-sm btn-warning" title="Editar">
+                                <i class="fa fa-edit"></i>
+                              </a>
+                              <a href="{% url 'eliminar' %}?tipo=estudiante&id={{ estudiante.id }}" 
+                                 class="btn btn-sm btn-danger" title="Eliminar"
+                                 onclick="return confirm('¿Estás seguro de eliminar este estudiante?')">
+                                <i class="fa fa-trash"></i>
+                              </a>
+                            </div>
+                          </td>
+                        </tr>
+                      {% empty %}
+                        <tr>
+                          <td colspan="7" class="text-center text-muted py-4">
+                            <i class="fa fa-info-circle fa-2x mb-2"></i>
+                            <div>No hay estudiantes registrados o que coincidan con la búsqueda.</div>
+                          </td>
+                        </tr>
+                      {% endfor %}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Tab de Profesores -->
+          <div class="tab-pane fade" id="profesores" role="tabpanel">
+            <!-- Filtros y búsqueda para profesores -->
+            <div class="card mb-4 border-0 bg-light">
+              <div class="card-header bg-success text-white">
+                <h5 class="mb-0"><i class="fa fa-filter me-2"></i>Filtros de Búsqueda - Profesores</h5>
+              </div>
+              <div class="card-body">
+                <form method="get" class="row g-3" id="filtro-profesores">
+                  <input type="hidden" name="tab" value="profesores">
+                  
+                  <div class="col-lg-3">
+                    <label class="form-label fw-bold">
+                      <i class="fa fa-search text-muted me-1"></i>Buscar
+                    </label>
+                    <input type="text" name="q_profesor" class="form-control" 
+                           placeholder="Nombre, apellido o código..." 
+                           value="{{ request.GET.q_profesor }}">
+                  </div>
+                  
+                  <div class="col-lg-3">
+                    <label class="form-label fw-bold">
+                      <i class="fa fa-graduation-cap text-muted me-1"></i>Especialidad
+                    </label>
+                    <input type="text" name="especialidad" class="form-control" 
+                           placeholder="Especialidad..." 
+                           value="{{ request.GET.especialidad }}">
+                  </div>
+                  
+                  <div class="col-lg-2">
+                    <label class="form-label fw-bold">
+                      <i class="fa fa-venus-mars text-muted me-1"></i>Género
+                    </label>
+                    <select name="genero_profesor" class="form-select">
+                      <option value="">Todos</option>
+                      <option value="M" {% if request.GET.genero_profesor == 'M' %}selected{% endif %}>Masculino</option>
+                      <option value="F" {% if request.GET.genero_profesor == 'F' %}selected{% endif %}>Femenino</option>
+                    </select>
+                  </div>
+                  
+                  <div class="col-lg-2">
+                    <label class="form-label fw-bold">
+                      <i class="fa fa-id-card text-muted me-1"></i>Documento
+                    </label>
+                    <select name="tipo_doc_profesor" class="form-select">
+                      <option value="">Todos</option>
+                      <option value="DNI" {% if request.GET.tipo_doc_profesor == 'DNI' %}selected{% endif %}>DNI</option>
+                      <option value="PASAPORTE" {% if request.GET.tipo_doc_profesor == 'PASAPORTE' %}selected{% endif %}>Pasaporte</option>
+                      <option value="CARNET_EXTRANJERIA" {% if request.GET.tipo_doc_profesor == 'CARNET_EXTRANJERIA' %}selected{% endif %}>Carnet Extranjería</option>
+                    </select>
+                  </div>
+                  
+                  <div class="col-lg-2">
+                    <label class="form-label">&nbsp;</label>
+                    <div class="d-grid gap-2">
+                      <button type="submit" class="btn btn-success">
+                        <i class="fa fa-search"></i> Filtrar
+                      </button>
+                    </div>
+                  </div>
+                </form>
+              </div>
+            </div>
+
+            <!-- Tabla de profesores -->
+            <div class="card border-0">
+              <div class="card-header bg-gradient-success text-white">
+                <div class="row align-items-center">
+                  <div class="col">
+                    <h5 class="mb-0">
+                      <i class="fa fa-chalkboard-teacher me-2"></i>Lista de Profesores
+                      {% if profesores_filtrados %}
+                        <span class="badge bg-light text-dark ms-2">{{ profesores_filtrados|length }} resultados</span>
+                      {% endif %}
+                    </h5>
+                  </div>
+                  <div class="col-auto">
+                    <button class="btn btn-light btn-sm" onclick="exportarProfesores()">
+                      <i class="fa fa-download"></i> Exportar
+                    </button>
+                  </div>
+                </div>
+              </div>
+              <div class="card-body p-0">
+                <div class="table-responsive">
+                  <table class="table table-hover mb-0">
+                    <thead class="table-dark">
+                      <tr>
+                        <th style="width: 8%;">ID</th>
+                        <th style="width: 15%;">Código</th>
+                        <th style="width: 25%;">Nombre Completo</th>
+                        <th style="width: 15%;">Documento</th>
+                        <th style="width: 12%;">Género</th>
+                        <th style="width: 15%;">Especialidad</th>
+                        <th style="width: 10%;">Acciones</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {% for profesor in profesores_filtrados %}
+                        <tr>
+                          <td>
+                            <span class="badge bg-success rounded-pill">{{ profesor.id }}</span>
+                          </td>
+                          <td>
+                            <div class="d-flex align-items-center">
+                              <div class="avatar-sm bg-success bg-gradient rounded-circle me-2 d-flex align-items-center justify-content-center">
+                                <i class="fa fa-chalkboard-teacher text-white"></i>
+                              </div>
+                              <span class="fw-bold text-success">{{ profesor.codigo_profesor }}</span>
+                            </div>
+                          </td>
+                          <td>
+                            <div>
+                              <div class="fw-bold">{{ profesor.primer_nombre }} {{ profesor.segundo_nombre|default:"" }}</div>
+                              <div class="text-muted small">{{ profesor.apellido_paterno }} {{ profesor.apellido_materno|default:"" }}</div>
+                            </div>
+                          </td>
+                          <td>
+                            <div>
+                              <span class="badge bg-light text-dark">{{ profesor.get_tipo_documento_display }}</span>
+                              <div class="small text-muted mt-1">{{ profesor.numero_documento }}</div>
+                            </div>
+                          </td>
+                          <td>
+                            <span class="badge bg-{% if profesor.genero == 'M' %}info{% else %}warning{% endif %}">
+                              {% if profesor.genero == 'M' %}
+                                <i class="fa fa-mars"></i> Masculino
+                              {% else %}
+                                <i class="fa fa-venus"></i> Femenino
+                              {% endif %}
+                            </span>
+                          </td>
+                          <td>
+                            <span class="badge bg-secondary">{{ profesor.especialidad|truncatechars:15 }}</span>
+                          </td>
+                          <td>
+                            <div class="btn-group" role="group">
+                              <a href="{% url 'modificar' %}?tipo=profesor&id={{ profesor.id }}" 
+                                 class="btn btn-sm btn-warning" title="Editar">
+                                <i class="fa fa-edit"></i>
+                              </a>
+                              <a href="{% url 'eliminar' %}?tipo=profesor&id={{ profesor.id }}" 
+                                 class="btn btn-sm btn-danger" title="Eliminar"
+                                 onclick="return confirm('¿Estás seguro de eliminar este profesor?')">
+                                <i class="fa fa-trash"></i>
+                              </a>
+                            </div>
+                          </td>
+                        </tr>
+                      {% empty %}
+                        <tr>
+                          <td colspan="7" class="text-center text-muted py-4">
+                            <i class="fa fa-info-circle fa-2x mb-2"></i>
+                            <div>No hay profesores registrados o que coincidan con la búsqueda.</div>
+                          </td>
+                        </tr>
+                      {% endfor %}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// Mantener la pestaña activa después de filtrar
+document.addEventListener('DOMContentLoaded', function() {
+    const urlParams = new URLSearchParams(window.location.search);
+    const activeTab = urlParams.get('tab');
+    
+    if (activeTab === 'profesores') {
+        document.getElementById('estudiantes-tab').classList.remove('active');
+        document.getElementById('profesores-tab').classList.add('active');
+        document.getElementById('estudiantes').classList.remove('show', 'active');
+        document.getElementById('profesores').classList.add('show', 'active');
+    }
+});
+
+// Funciones de exportación
+function exportarEstudiantes() {
+    alert('Función de exportación de estudiantes en desarrollo');
+}
+
+function exportarProfesores() {
+    alert('Función de exportación de profesores en desarrollo');
+}
+</script>
+{% endblock %}

@@ -1,0 +1,194 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="es">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="icon" href="images/favicon.ico" type="image/ico" />
+    <title>SMA</title>
+    <link href="{% static '/FrWork/admin_lte/vendors/bootstrap/dist/css/bootstrap.min.css' %}" rel="stylesheet">
+    <link href="{% static '/FrWork/admin_lte/vendors/font-awesome/css/font-awesome.min.css' %}" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link href="{% static '/FrWork/admin_lte/build/css/custom.min.css' %}" rel="stylesheet">
+    <link href="{% static 'sma_moderno.css' %}" rel="stylesheet">
+    <style>
+      .sidebar {
+        position: fixed;
+        top: 0; left: 0; bottom: 0;
+        width: 260px;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: #fff;
+        z-index: 1040;
+        transition: width 0.3s, transform 0.3s;
+        box-shadow: 4px 0 20px rgba(0,0,0,0.10);
+        display: flex;
+        flex-direction: column;
+        min-height: 100vh;
+        height: 100vh;
+        overflow: hidden;
+      }
+      .sidebar .sidebar-header {
+        padding: 14px 10px 10px 10px;
+        text-align: center;
+        font-size: 1.25rem;
+        font-weight: 700;
+        letter-spacing: 1px;
+        background: rgba(255,255,255,0.07);
+        border-bottom: 1px solid rgba(255,255,255,0.08);
+      }
+      .sidebar .sidebar-profile {
+        padding: 12px 5px 8px 5px;
+        text-align: center;
+        border-bottom: 1px solid rgba(255,255,255,0.08);
+        background: linear-gradient(135deg, #0056b3 0%, #007bff 100%);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+      }
+      .sidebar .sidebar-profile img {
+        width: 48px; height: 48px; border-radius: 50%; border: 2px solid #fff; margin-bottom: 4px;
+        box-shadow: 0 1px 4px rgba(0,0,0,0.10);
+      }
+      .sidebar .sidebar-profile .name {
+        font-size: 1.08rem; font-weight: 600; color: #fff; line-height: 1.1;
+      }
+      .sidebar .sidebar-profile .role {
+        font-size: 0.9rem; color: #e0e0e0; line-height: 1;
+      }
+      .sidebar .sidebar-menu {
+        flex: 1 1 auto;
+        overflow-y: auto;
+        padding: 6px 0 12px 0;
+        scrollbar-width: thin;
+        scrollbar-color: #b3b3b3 #f0f0f0;
+        max-height: calc(100vh - 170px);
+      }
+      .sidebar .sidebar-menu::-webkit-scrollbar {
+        width: 7px;
+        background: #f0f0f0;
+      }
+      .sidebar .sidebar-menu::-webkit-scrollbar-thumb {
+        background: #b3b3b3;
+        border-radius: 4px;
+      }
+      .sidebar .menu-section {
+        margin-bottom: 6px;
+      }
+      .sidebar .menu-section-title {
+        font-size: 0.92rem;
+        font-weight: 700;
+        color: #e0e0e0;
+        padding: 6px 20px 2px 20px;
+        letter-spacing: 1px;
+        text-transform: uppercase;
+        opacity: 0.7;
+        margin-bottom: 0;
+      }
+      .sidebar .menu-list {
+        list-style: none; margin: 0; padding: 0;
+      }
+      .sidebar .menu-list li a {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 10px 20px;
+        color: #fff;
+        text-decoration: none;
+        font-size: 1.05rem;
+        border-radius: 10px 0 0 10px;
+        transition: background 0.18s, color 0.18s;
+        position: relative;
+        min-height: 40px;
+      }
+      .sidebar .menu-list li a.active, .sidebar .menu-list li a:hover {
+        background: rgba(255,255,255,0.13);
+        color: #fff;
+      }
+      .sidebar .menu-list li a i {
+        font-size: 1.18rem;
+        min-width: 24px;
+        text-align: center;
+      }
+      .main_container {
+        margin-left: 260px;
+        transition: margin-left 0.3s;
+      }
+      .right_col {
+        background: #f8f9fa;
+        min-height: 100vh;
+        padding: 12px 10px 12px 10px;
+        transition: all 0.3s ease;
+      }
+      @media (max-width: 991.98px) {
+        .sidebar {
+          transform: translateX(-100%);
+          width: 260px !important;
+        }
+        .sidebar.active {
+          transform: translateX(0);
+        }
+        .main_container {
+          margin-left: 0 !important;
+        }
+      }
+    </style>
+  </head>
+  <body class="nav-md">
+    <div class="sidebar" id="sidebar">
+      <div class="sidebar-header">
+        <i class="fa fa-graduation-cap"></i><span>SMA</span>
+      </div>
+      <div class="sidebar-profile">
+        <img src="{% static 'FrWork/admin_lte/build/images/loading.gif' %}" alt="Perfil">
+        <div class="name fw-bold text-white">{{ user.get_full_name|default:user.username }}</div>
+        <div class="role">
+          {% if user.is_authenticated %}
+            {% if user.perfil.tipo_usuario == 'estudiante' %}Estudiante{% elif user.perfil.tipo_usuario == 'profesor' %}Profesor{% elif user.perfil.tipo_usuario == 'administrador' %}Administrador{% else %}Director{% endif %}
+          {% else %}Invitado{% endif %}
+        </div>
+      </div>
+      <nav class="sidebar-menu">
+        {% block sidebar_menu %}{% endblock %}
+      </nav>
+    </div>
+    <div class="container body">
+      <div class="main_container">
+        <div class="top_nav">
+          <div class="nav_menu">
+            <nav>
+              <ul class="nav navbar-nav navbar-right">
+                <li class="nav-item">
+                  <button class="sidebar-toggle-btn d-lg-none" id="sidebarToggleBtnTop" title="Mostrar menú"><i class="fas fa-bars"></i></button>
+                </li>
+                {% if user.is_authenticated %}
+                <li class="nav-item dropdown">
+                  <a href="#" class="user-profile dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
+                    <i class="fa fa-user"></i> {{ user.username }}
+                    <span class="fa fa-angle-down"></span>
+                  </a>
+                  <ul class="dropdown-menu dropdown-menu-end">
+                    <li>
+                      <a href="{% url 'logout' %}" class="dropdown-item">
+                        <i class="fa fa-sign-out pull-right"></i> Cerrar sesión
+                      </a>
+                    </li>
+                  </ul>
+                </li>
+                {% endif %}
+              </ul>
+            </nav>
+          </div>
+        </div>
+        <div class="right_col" role="main">
+          {% block content %}{% endblock %}
+        </div>
+      </div>
+    </div>
+    <script src="{% static '/FrWork/admin_lte/vendors/jquery/dist/jquery.min.js' %}"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="{% static '/FrWork/admin_lte/build/js/custom.min.js' %}"></script>
+  </body>
+</html>

@@ -1,0 +1,659 @@
+{% extends "index_master.html" %}
+
+{% block content %}
+<div class="right_col" role="main">
+  <div class="container-fluid">
+    <!-- Header mejorado -->
+    <div class="row mb-4">
+      <div class="col-12">
+        <div class="page-title">
+          <div class="title_left">
+            <h1 class="display-6">
+              <i class="fas fa-users text-gradient"></i> 
+              <span class="text-gradient">Gestión de Usuarios</span>
+            </h1>
+            <p class="lead text-muted">Administra y visualiza estudiantes y profesores del sistema educativo</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Tarjeta principal con diseño mejorado -->
+    <div class="card border-0 shadow-lg overflow-hidden">
+      <!-- Header con gradiente -->
+      <div class="card-header bg-gradient text-white position-relative" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 2rem 1.5rem;">
+        <div class="position-absolute top-0 start-0 w-100 h-100 opacity-25" style="background: url('data:image/svg+xml,<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 100 100\"><defs><pattern id=\"grain\" width=\"100\" height=\"100\" patternUnits=\"userSpaceOnUse\"><circle cx=\"25\" cy=\"25\" r=\"1\" fill=\"white\" opacity=\"0.1\"/><circle cx=\"75\" cy=\"25\" r=\"1\" fill=\"white\" opacity=\"0.1\"/><circle cx=\"25\" cy=\"75\" r=\"1\" fill=\"white\" opacity=\"0.1\"/><circle cx=\"75\" cy=\"75\" r=\"1\" fill=\"white\" opacity=\"0.1\"/></pattern></defs><rect width=\"100\" height=\"100\" fill=\"url(%23grain)\"/></svg>');"></div>
+        
+        <!-- Pestañas modernas -->
+        <ul class="nav nav-pills nav-fill position-relative" id="userTabs" role="tablist" style="background: rgba(255,255,255,0.15); backdrop-filter: blur(10px); border-radius: 15px; padding: 8px;">
+          <li class="nav-item" role="presentation">
+            <button class="nav-link active rounded-pill px-4 py-3 fw-bold transition-all" 
+                    id="estudiantes-tab" data-bs-toggle="tab" 
+                    data-bs-target="#estudiantes" type="button" role="tab"
+                    style="background: rgba(255,255,255,0.9); color: #667eea !important; border: none; transition: all 0.3s ease;">
+              <i class="fas fa-graduation-cap me-2"></i>Estudiantes
+              <span class="badge bg-primary ms-2">{{ estudiantes_filtrados|length|default:estudiantes|length }}</span>
+            </button>
+          </li>
+          <li class="nav-item" role="presentation">
+            <button class="nav-link rounded-pill px-4 py-3 fw-bold text-white transition-all" 
+                    id="profesores-tab" data-bs-toggle="tab" 
+                    data-bs-target="#profesores" type="button" role="tab"
+                    style="border: none; transition: all 0.3s ease;">
+              <i class="fas fa-chalkboard-teacher me-2"></i>Profesores
+              <span class="badge bg-light text-dark ms-2">{{ profesores_filtrados|length|default:profesores|length }}</span>
+            </button>
+          </li>
+        </ul>
+      </div>
+
+      <div class="card-body p-0">
+        <div class="tab-content" id="userTabsContent">
+          <!-- Tab de Estudiantes -->
+          <div class="tab-pane fade show active" id="estudiantes" role="tabpanel">
+            <div class="p-4">
+              <!-- Filtros mejorados para estudiantes -->
+              <div class="card mb-4 border-0" style="background: linear-gradient(135deg, #f8faff 0%, #e8f2ff 100%);">
+                <div class="card-header border-0" style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);">
+                  <h5 class="mb-0 text-white fw-bold">
+                    <i class="fas fa-filter me-2"></i>Filtros de Búsqueda - Estudiantes
+                  </h5>
+                </div>
+                <div class="card-body">
+                  <form method="get" class="row g-3" id="filtro-estudiantes">
+                    <input type="hidden" name="tab" value="estudiantes">
+                    
+                    <div class="col-lg-3">
+                      <label class="form-label fw-bold text-primary">
+                        <i class="fas fa-search me-1"></i>Buscar Estudiante
+                      </label>
+                      <div class="input-group">
+                        <span class="input-group-text bg-primary text-white">
+                          <i class="fas fa-search"></i>
+                        </span>
+                        <input type="text" name="q_estudiante" class="form-control form-control-lg" 
+                               placeholder="Nombre, apellido o código..." 
+                               value="{{ request.GET.q_estudiante }}">
+                      </div>
+                    </div>
+                    
+                    <div class="col-lg-2">
+                      <label class="form-label fw-bold text-success">
+                        <i class="fas fa-venus-mars me-1"></i>Género
+                      </label>
+                      <select name="genero_estudiante" class="form-select form-select-lg">
+                        <option value="">Todos</option>
+                        <option value="M" {% if request.GET.genero_estudiante == 'M' %}selected{% endif %}>Masculino</option>
+                        <option value="F" {% if request.GET.genero_estudiante == 'F' %}selected{% endif %}>Femenino</option>
+                      </select>
+                    </div>
+                    
+                    <div class="col-lg-3">
+                      <label class="form-label fw-bold text-info">
+                        <i class="fas fa-id-card me-1"></i>Tipo de Documento
+                      </label>
+                      <select name="tipo_doc_estudiante" class="form-select form-select-lg">
+                        <option value="">Todos los tipos</option>
+                        <option value="DNI" {% if request.GET.tipo_doc_estudiante == 'DNI' %}selected{% endif %}>DNI</option>
+                        <option value="PASAPORTE" {% if request.GET.tipo_doc_estudiante == 'PASAPORTE' %}selected{% endif %}>Pasaporte</option>
+                        <option value="CARNET_EXTRANJERIA" {% if request.GET.tipo_doc_estudiante == 'CARNET_EXTRANJERIA' %}selected{% endif %}>Carnet Extranjería</option>
+                      </select>
+                    </div>
+                    
+                    <div class="col-lg-2">
+                      <label class="form-label fw-bold text-warning">
+                        <i class="fas fa-calendar me-1"></i>Fecha Ingreso
+                      </label>
+                      <input type="date" name="fecha_ingreso" class="form-control form-control-lg" 
+                             value="{{ request.GET.fecha_ingreso }}">
+                    </div>
+                    
+                    <div class="col-lg-2">
+                      <label class="form-label">&nbsp;</label>
+                      <div class="d-grid">
+                        <button type="submit" class="btn btn-lg text-white fw-bold" 
+                                style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border: none;">
+                          <i class="fas fa-search me-1"></i> Filtrar
+                        </button>
+                      </div>
+                    </div>
+                  </form>
+                  
+                  <!-- Búsqueda rápida mejorada -->
+                  <div class="row mt-3">
+                    <div class="col-12">
+                      <div class="d-flex align-items-center gap-2 flex-wrap">
+                        <span class="text-muted fw-bold me-2">
+                          <i class="fas fa-bolt text-warning me-1"></i>Búsqueda rápida:
+                        </span>
+                        <a href="?tab=estudiantes" class="badge bg-secondary text-decoration-none px-3 py-2 rounded-pill">
+                          <i class="fas fa-list me-1"></i>Ver todos
+                        </a>
+                        {% for letra in 'ABCDEFGHIJKLMNOPQRSTUVWXYZ' %}
+                          <a href="?tab=estudiantes&q_estudiante={{ letra }}" 
+                             class="badge bg-primary text-decoration-none px-2 py-1 rounded-pill">{{ letra }}</a>
+                        {% endfor %}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Tabla de estudiantes mejorada -->
+              <div class="card border-0 shadow-sm">
+                <div class="card-header border-0" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+                  <div class="row align-items-center">
+                    <div class="col">
+                      <h5 class="mb-0 text-white fw-bold">
+                        <i class="fas fa-graduation-cap me-2"></i>Lista de Estudiantes
+                        {% if estudiantes_filtrados %}
+                          <span class="badge bg-light text-primary ms-2">{{ estudiantes_filtrados|length }} resultados</span>
+                        {% endif %}
+                      </h5>
+                    </div>
+                    <div class="col-auto">
+                      <div class="btn-group">
+                        <button class="btn btn-light btn-sm" onclick="exportarEstudiantes()">
+                          <i class="fas fa-download me-1"></i>Exportar
+                        </button>
+                        <button class="btn btn-light btn-sm" onclick="window.print()">
+                          <i class="fas fa-print me-1"></i>Imprimir
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <div class="card-body p-0">
+                  <div class="table-responsive">
+                    <table class="table table-hover mb-0 align-middle">
+                      <thead style="background: linear-gradient(135deg, #f8f9fc 0%, #e9ecef 100%);">
+                        <tr>
+                          <th class="fw-bold text-primary py-3">
+                            <i class="fas fa-hashtag me-1"></i>ID
+                          </th>
+                          <th class="fw-bold text-primary py-3">
+                            <i class="fas fa-barcode me-1"></i>Código
+                          </th>
+                          <th class="fw-bold text-primary py-3">
+                            <i class="fas fa-user me-1"></i>Nombre Completo
+                          </th>
+                          <th class="fw-bold text-primary py-3">
+                            <i class="fas fa-id-card me-1"></i>Documento
+                          </th>
+                          <th class="fw-bold text-primary py-3">
+                            <i class="fas fa-venus-mars me-1"></i>Género
+                          </th>
+                          <th class="fw-bold text-primary py-3">
+                            <i class="fas fa-envelope me-1"></i>Email
+                          </th>
+                          <th class="fw-bold text-primary py-3 text-center">
+                            <i class="fas fa-cogs me-1"></i>Acciones
+                          </th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {% for estudiante in estudiantes_filtrados %}
+                          <tr class="border-bottom hover-row" style="transition: all 0.3s ease;">
+                            <td class="py-3">
+                              <span class="badge bg-gradient-primary rounded-pill fw-bold px-3 py-2">{{ estudiante.id }}</span>
+                            </td>
+                            <td class="py-3">
+                              <div class="d-flex align-items-center">
+                                <div class="avatar-circle me-3" style="width: 45px; height: 45px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 50%; display: flex; align-items: center; justify-content: center;">
+                                  <i class="fas fa-graduation-cap text-white"></i>
+                                </div>
+                                <div>
+                                  <span class="fw-bold text-primary fs-6">{{ estudiante.codigo_estudiante }}</span>
+                                  <br><small class="text-muted">Estudiante</small>
+                                </div>
+                              </div>
+                            </td>
+                            <td class="py-3">
+                              <div>
+                                <div class="fw-bold text-dark fs-6">
+                                  {{ estudiante.primer_nombre }} {{ estudiante.segundo_nombre|default:"" }}
+                                </div>
+                                <div class="text-muted">
+                                  {{ estudiante.apellido_paterno }} {{ estudiante.apellido_materno|default:"" }}
+                                </div>
+                              </div>
+                            </td>
+                            <td class="py-3">
+                              <div>
+                                <span class="badge bg-info text-dark fw-bold px-3 py-2 rounded-pill">
+                                  {{ estudiante.get_tipo_documento_display }}
+                                </span>
+                                <div class="text-muted mt-1 fw-bold">{{ estudiante.numero_documento }}</div>
+                              </div>
+                            </td>
+                            <td class="py-3">
+                              <span class="badge bg-{% if estudiante.genero == 'M' %}primary{% else %}danger{% endif %} px-3 py-2 rounded-pill fw-bold">
+                                {% if estudiante.genero == 'M' %}
+                                  <i class="fas fa-mars me-1"></i>Masculino
+                                {% else %}
+                                  <i class="fas fa-venus me-1"></i>Femenino
+                                {% endif %}
+                              </span>
+                            </td>
+                            <td class="py-3">
+                              <a href="mailto:{{ estudiante.email }}" class="text-decoration-none">
+                                <div class="d-flex align-items-center">
+                                  <i class="fas fa-envelope text-primary me-2"></i>
+                                  <span class="text-dark">{{ estudiante.email|truncatechars:25 }}</span>
+                                </div>
+                              </a>
+                            </td>
+                            <td class="py-3 text-center">
+                              <div class="btn-group" role="group">
+                                <a href="{% url 'modificar' %}?tipo=estudiante&id={{ estudiante.id }}" 
+                                   class="btn btn-warning btn-sm rounded-pill px-3 me-1" 
+                                   title="Editar estudiante"
+                                   style="transition: all 0.3s ease;">
+                                  <i class="fas fa-edit"></i>
+                                </a>
+                                <a href="{% url 'eliminar' %}?tipo=estudiante&id={{ estudiante.id }}" 
+                                   class="btn btn-danger btn-sm rounded-pill px-3" 
+                                   title="Eliminar estudiante"
+                                   style="transition: all 0.3s ease;"
+                                   onclick="return confirm('¿Estás seguro de eliminar este estudiante?')">
+                                  <i class="fas fa-trash"></i>
+                                </a>
+                              </div>
+                            </td>
+                          </tr>
+                        {% empty %}
+                          <tr>
+                            <td colspan="7" class="text-center py-5">
+                              <div class="empty-state">
+                                <i class="fas fa-users text-muted mb-3" style="font-size: 4rem; opacity: 0.3;"></i>
+                                <h5 class="text-muted">No hay estudiantes registrados</h5>
+                                <p class="text-muted">No se encontraron estudiantes que coincidan con los criterios de búsqueda.</p>
+                                <a href="{% url 'agregar' %}" class="btn btn-primary">
+                                  <i class="fas fa-plus me-1"></i>Agregar primer estudiante
+                                </a>
+                              </div>
+                            </td>
+                          </tr>
+                        {% endfor %}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Tab de Profesores -->
+          <div class="tab-pane fade" id="profesores" role="tabpanel">
+            <div class="p-4">
+              <!-- Filtros para profesores -->
+              <div class="card mb-4 border-0" style="background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);">
+                <div class="card-header border-0" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%);">
+                  <h5 class="mb-0 text-white fw-bold">
+                    <i class="fas fa-filter me-2"></i>Filtros de Búsqueda - Profesores
+                  </h5>
+                </div>
+                <div class="card-body">
+                  <form method="get" class="row g-3" id="filtro-profesores">
+                    <input type="hidden" name="tab" value="profesores">
+                    
+                    <div class="col-lg-3">
+                      <label class="form-label fw-bold text-success">
+                        <i class="fas fa-search me-1"></i>Buscar Profesor
+                      </label>
+                      <div class="input-group">
+                        <span class="input-group-text bg-success text-white">
+                          <i class="fas fa-search"></i>
+                        </span>
+                        <input type="text" name="q_profesor" class="form-control form-control-lg" 
+                               placeholder="Nombre, apellido o código..." 
+                               value="{{ request.GET.q_profesor }}">
+                      </div>
+                    </div>
+                    
+                    <div class="col-lg-3">
+                      <label class="form-label fw-bold text-info">
+                        <i class="fas fa-graduation-cap me-1"></i>Especialidad
+                      </label>
+                      <input type="text" name="especialidad" class="form-control form-control-lg" 
+                             placeholder="Especialidad..." 
+                             value="{{ request.GET.especialidad }}">
+                    </div>
+                    
+                    <div class="col-lg-2">
+                      <label class="form-label fw-bold text-warning">
+                        <i class="fas fa-venus-mars me-1"></i>Género
+                      </label>
+                      <select name="genero_profesor" class="form-select form-select-lg">
+                        <option value="">Todos</option>
+                        <option value="M" {% if request.GET.genero_profesor == 'M' %}selected{% endif %}>Masculino</option>
+                        <option value="F" {% if request.GET.genero_profesor == 'F' %}selected{% endif %}>Femenino</option>
+                      </select>
+                    </div>
+                    
+                    <div class="col-lg-2">
+                      <label class="form-label fw-bold text-primary">
+                        <i class="fas fa-id-card me-1"></i>Documento
+                      </label>
+                      <select name="tipo_doc_profesor" class="form-select form-select-lg">
+                        <option value="">Todos</option>
+                        <option value="DNI" {% if request.GET.tipo_doc_profesor == 'DNI' %}selected{% endif %}>DNI</option>
+                        <option value="PASAPORTE" {% if request.GET.tipo_doc_profesor == 'PASAPORTE' %}selected{% endif %}>Pasaporte</option>
+                        <option value="CARNET_EXTRANJERIA" {% if request.GET.tipo_doc_profesor == 'CARNET_EXTRANJERIA' %}selected{% endif %}>Carnet Extranjería</option>
+                      </select>
+                    </div>
+                    
+                    <div class="col-lg-2">
+                      <label class="form-label">&nbsp;</label>
+                      <div class="d-grid">
+                        <button type="submit" class="btn btn-lg text-white fw-bold" 
+                                style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); border: none;">
+                          <i class="fas fa-search me-1"></i> Filtrar
+                        </button>
+                      </div>
+                    </div>
+                  </form>
+                </div>
+              </div>
+
+              <!-- Tabla de profesores -->
+              <div class="card border-0 shadow-sm">
+                <div class="card-header border-0" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%);">
+                  <div class="row align-items-center">
+                    <div class="col">
+                      <h5 class="mb-0 text-white fw-bold">
+                        <i class="fas fa-chalkboard-teacher me-2"></i>Lista de Profesores
+                        {% if profesores_filtrados %}
+                          <span class="badge bg-light text-success ms-2">{{ profesores_filtrados|length }} resultados</span>
+                        {% endif %}
+                      </h5>
+                    </div>
+                    <div class="col-auto">
+                      <div class="btn-group">
+                        <button class="btn btn-light btn-sm" onclick="exportarProfesores()">
+                          <i class="fas fa-download me-1"></i>Exportar
+                        </button>
+                        <button class="btn btn-light btn-sm" onclick="window.print()">
+                          <i class="fas fa-print me-1"></i>Imprimir
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <div class="card-body p-0">
+                  <div class="table-responsive">
+                    <table class="table table-hover mb-0 align-middle">
+                      <thead style="background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);">
+                        <tr>
+                          <th class="fw-bold text-success py-3">
+                            <i class="fas fa-hashtag me-1"></i>ID
+                          </th>
+                          <th class="fw-bold text-success py-3">
+                            <i class="fas fa-barcode me-1"></i>Código
+                          </th>
+                          <th class="fw-bold text-success py-3">
+                            <i class="fas fa-user me-1"></i>Nombre Completo
+                          </th>
+                          <th class="fw-bold text-success py-3">
+                            <i class="fas fa-id-card me-1"></i>Documento
+                          </th>
+                          <th class="fw-bold text-success py-3">
+                            <i class="fas fa-venus-mars me-1"></i>Género
+                          </th>
+                          <th class="fw-bold text-success py-3">
+                            <i class="fas fa-graduation-cap me-1"></i>Especialidad
+                          </th>
+                          <th class="fw-bold text-success py-3 text-center">
+                            <i class="fas fa-cogs me-1"></i>Acciones
+                          </th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {% for profesor in profesores_filtrados %}
+                          <tr class="border-bottom hover-row" style="transition: all 0.3s ease;">
+                            <td class="py-3">
+                              <span class="badge bg-gradient-success rounded-pill fw-bold px-3 py-2">{{ profesor.id }}</span>
+                            </td>
+                            <td class="py-3">
+                              <div class="d-flex align-items-center">
+                                <div class="avatar-circle me-3" style="width: 45px; height: 45px; background: linear-gradient(135deg, #10b981 0%, #059669 100%); border-radius: 50%; display: flex; align-items: center; justify-content: center;">
+                                  <i class="fas fa-chalkboard-teacher text-white"></i>
+                                </div>
+                                <div>
+                                  <span class="fw-bold text-success fs-6">{{ profesor.codigo_profesor }}</span>
+                                  <br><small class="text-muted">Profesor</small>
+                                </div>
+                              </div>
+                            </td>
+                            <td class="py-3">
+                              <div>
+                                <div class="fw-bold text-dark fs-6">
+                                  {{ profesor.primer_nombre }} {{ profesor.segundo_nombre|default:"" }}
+                                </div>
+                                <div class="text-muted">
+                                  {{ profesor.apellido_paterno }} {{ profesor.apellido_materno|default:"" }}
+                                </div>
+                              </div>
+                            </td>
+                            <td class="py-3">
+                              <div>
+                                <span class="badge bg-info text-dark fw-bold px-3 py-2 rounded-pill">
+                                  {{ profesor.get_tipo_documento_display }}
+                                </span>
+                                <div class="text-muted mt-1 fw-bold">{{ profesor.numero_documento }}</div>
+                              </div>
+                            </td>
+                            <td class="py-3">
+                              <span class="badge bg-{% if profesor.genero == 'M' %}primary{% else %}danger{% endif %} px-3 py-2 rounded-pill fw-bold">
+                                {% if profesor.genero == 'M' %}
+                                  <i class="fas fa-mars me-1"></i>Masculino
+                                {% else %}
+                                  <i class="fas fa-venus me-1"></i>Femenino
+                                {% endif %}
+                              </span>
+                            </td>
+                            <td class="py-3">
+                              <span class="badge bg-secondary px-3 py-2 rounded-pill fw-bold">
+                                {{ profesor.especialidad|truncatechars:20 }}
+                              </span>
+                            </td>
+                            <td class="py-3 text-center">
+                              <div class="btn-group" role="group">
+                                <a href="{% url 'modificar' %}?tipo=profesor&id={{ profesor.id }}" 
+                                   class="btn btn-warning btn-sm rounded-pill px-3 me-1" 
+                                   title="Editar profesor"
+                                   style="transition: all 0.3s ease;">
+                                  <i class="fas fa-edit"></i>
+                                </a>
+                                <a href="{% url 'eliminar' %}?tipo=profesor&id={{ profesor.id }}" 
+                                   class="btn btn-danger btn-sm rounded-pill px-3" 
+                                   title="Eliminar profesor"
+                                   style="transition: all 0.3s ease;"
+                                   onclick="return confirm('¿Estás seguro de eliminar este profesor?')">
+                                  <i class="fas fa-trash"></i>
+                                </a>
+                              </div>
+                            </td>
+                          </tr>
+                        {% empty %}
+                          <tr>
+                            <td colspan="7" class="text-center py-5">
+                              <div class="empty-state">
+                                <i class="fas fa-chalkboard-teacher text-muted mb-3" style="font-size: 4rem; opacity: 0.3;"></i>
+                                <h5 class="text-muted">No hay profesores registrados</h5>
+                                <p class="text-muted">No se encontraron profesores que coincidan con los criterios de búsqueda.</p>
+                                <a href="{% url 'agregar' %}" class="btn btn-success">
+                                  <i class="fas fa-plus me-1"></i>Agregar primer profesor
+                                </a>
+                              </div>
+                            </td>
+                          </tr>
+                        {% endfor %}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Estilos personalizados mejorados -->
+<style>
+  .text-gradient {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+  
+  .hover-row:hover {
+    background-color: rgba(102, 126, 234, 0.05) !important;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+  }
+  
+  .nav-pills .nav-link:not(.active):hover {
+    background: rgba(255,255,255,0.2) !important;
+    color: white !important;
+  }
+  
+  .btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(0,0,0,0.15);
+  }
+  
+  .avatar-circle:hover {
+    transform: scale(1.1);
+    transition: all 0.3s ease;
+  }
+  
+  .empty-state {
+    padding: 3rem;
+  }
+  
+  .table th {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+  }
+  
+  @media (max-width: 768px) {
+    .nav-pills {
+      flex-direction: column !important;
+    }
+    
+    .btn-group {
+      flex-direction: column;
+    }
+    
+    .avatar-circle {
+      width: 35px !important;
+      height: 35px !important;
+    }
+  }
+</style>
+
+<script>
+// Mantener la pestaña activa después de filtrar
+document.addEventListener('DOMContentLoaded', function() {
+    const urlParams = new URLSearchParams(window.location.search);
+    const activeTab = urlParams.get('tab');
+    
+    if (activeTab === 'profesores') {
+        // Cambiar pestaña activa
+        document.getElementById('estudiantes-tab').classList.remove('active');
+        document.getElementById('profesores-tab').classList.add('active');
+        document.getElementById('estudiantes').classList.remove('show', 'active');
+        document.getElementById('profesores').classList.add('show', 'active');
+        
+        // Actualizar estilo de pestaña
+        document.getElementById('profesores-tab').style.background = 'rgba(255,255,255,0.9)';
+        document.getElementById('profesores-tab').style.color = '#10b981';
+        document.getElementById('estudiantes-tab').style.background = 'transparent';
+        document.getElementById('estudiantes-tab').style.color = 'white';
+    }
+    
+    // Añadir event listeners para cambio de pestañas
+    document.getElementById('profesores-tab').addEventListener('click', function() {
+        this.style.background = 'rgba(255,255,255,0.9)';
+        this.style.color = '#10b981';
+        document.getElementById('estudiantes-tab').style.background = 'transparent';
+        document.getElementById('estudiantes-tab').style.color = 'white';
+    });
+    
+    document.getElementById('estudiantes-tab').addEventListener('click', function() {
+        this.style.background = 'rgba(255,255,255,0.9)';
+        this.style.color = '#667eea';
+        document.getElementById('profesores-tab').style.background = 'transparent';
+        document.getElementById('profesores-tab').style.color = 'white';
+    });
+});
+
+// Funciones de exportación mejoradas
+function exportarEstudiantes() {
+    // Implementar lógica de exportación
+    Swal.fire({
+        title: 'Exportar Estudiantes',
+        text: 'Selecciona el formato de exportación',
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonText: 'Excel',
+        cancelButtonText: 'PDF',
+        confirmButtonColor: '#667eea',
+        cancelButtonColor: '#10b981'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            // Exportar a Excel
+            window.location.href = '?export=excel&tab=estudiantes';
+        } else if (result.dismiss === Swal.DismissReason.cancel) {
+            // Exportar a PDF
+            window.location.href = '?export=pdf&tab=estudiantes';
+        }
+    });
+}
+
+function exportarProfesores() {
+    // Implementar lógica de exportación
+    Swal.fire({
+        title: 'Exportar Profesores',
+        text: 'Selecciona el formato de exportación',
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonText: 'Excel',
+        cancelButtonText: 'PDF',
+        confirmButtonColor: '#10b981',
+        cancelButtonColor: '#667eea'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            // Exportar a Excel
+            window.location.href = '?export=excel&tab=profesores';
+        } else if (result.dismiss === Swal.DismissReason.cancel) {
+            // Exportar a PDF
+            window.location.href = '?export=pdf&tab=profesores';
+        }
+    });
+}
+
+// Animaciones de entrada
+document.addEventListener('DOMContentLoaded', function() {
+    const rows = document.querySelectorAll('.hover-row');
+    rows.forEach((row, index) => {
+        row.style.opacity = '0';
+        row.style.transform = 'translateY(20px)';
+        setTimeout(() => {
+            row.style.transition = 'all 0.5s ease';
+            row.style.opacity = '1';
+            row.style.transform = 'translateY(0)';
+        }, index * 100);
+    });
+});
+</script>
+
+<!-- SweetAlert2 para notificaciones mejoradas -->
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+{% endblock %}

@@ -1,0 +1,170 @@
+{% extends "index_master.html" %}
+
+{% block content %}
+<div class="right_col" role="main">
+  <div class="container-fluid">
+    <!-- Header -->
+    <div class="row mb-4">
+      <div class="col-12">
+        <div class="d-flex align-items-center">
+          <a href="{% url 'calendario' %}" class="btn btn-outline-secondary me-3" title="Volver al calendario">
+            <i class="fas fa-arrow-left"></i>
+          </a>
+          <div>
+            <h1 class="mb-1">
+              <i class="fas fa-edit text-primary me-2"></i>Editar Evento
+            </h1>
+            <p class="text-muted mb-0">Modifica la información del evento seleccionado</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="row justify-content-center">
+      <div class="col-lg-8">
+        <div class="card border-0 shadow-lg">
+          <div class="card-header bg-gradient-primary text-white">
+            <div class="d-flex align-items-center">
+              <i class="fas fa-calendar-edit fa-lg me-2"></i>
+              <h4 class="mb-0">{{ evento.titulo }}</h4>
+            </div>
+          </div>
+          
+          <div class="card-body p-4">
+            <form method="post" class="row g-3" id="editarEventoForm">
+              {% csrf_token %}
+              
+              <!-- Información básica -->
+              <div class="col-md-6">
+                <label class="form-label fw-bold">
+                  <i class="fas fa-heading me-1 text-primary"></i>{{ form.titulo.label }}
+                </label>
+                {{ form.titulo }}
+                {% if form.titulo.errors %}
+                  <div class="text-danger small mt-1">
+                    <i class="fas fa-exclamation-circle me-1"></i>{{ form.titulo.errors.0 }}
+                  </div>
+                {% endif %}
+              </div>
+              
+              <div class="col-md-3">
+                <label class="form-label fw-bold">
+                  <i class="fas fa-calendar me-1 text-primary"></i>{{ form.fecha.label }}
+                </label>
+                {{ form.fecha }}
+                {% if form.fecha.errors %}
+                  <div class="text-danger small mt-1">
+                    <i class="fas fa-exclamation-circle me-1"></i>{{ form.fecha.errors.0 }}
+                  </div>
+                {% endif %}
+              </div>
+              
+              <div class="col-md-3">
+                <label class="form-label fw-bold">
+                  <i class="fas fa-flag me-1 text-warning"></i>{{ form.prioridad.label }}
+                </label>
+                {{ form.prioridad }}
+                {% if form.prioridad.errors %}
+                  <div class="text-danger small mt-1">
+                    <i class="fas fa-exclamation-circle me-1"></i>{{ form.prioridad.errors.0 }}
+                  </div>
+                {% endif %}
+              </div>
+              
+              <!-- Descripción -->
+              <div class="col-12">
+                <label class="form-label fw-bold">
+                  <i class="fas fa-align-left me-1 text-primary"></i>{{ form.descripcion.label }}
+                </label>
+                {{ form.descripcion }}
+                {% if form.descripcion.errors %}
+                  <div class="text-danger small mt-1">
+                    <i class="fas fa-exclamation-circle me-1"></i>{{ form.descripcion.errors.0 }}
+                  </div>
+                {% endif %}
+              </div>
+              
+              <!-- Botones de acción -->
+              <div class="col-12">
+                <div class="d-flex gap-2 justify-content-end mt-4">
+                  <a href="{% url 'calendario' %}" class="btn btn-light border">
+                    <i class="fas fa-times me-1"></i>Cancelar
+                  </a>
+                  <button type="submit" class="btn btn-success">
+                    <i class="fas fa-save me-1"></i>Guardar Cambios
+                  </button>
+                </div>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<style>
+.bg-gradient-primary {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+}
+
+.card {
+  transition: all 0.3s ease;
+}
+
+.form-control:focus,
+.form-select:focus,
+.form-control:focus-visible {
+  border-color: #667eea;
+  box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+}
+
+.btn-success {
+  background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+  border: none;
+}
+
+.btn-success:hover {
+  background: linear-gradient(135deg, #218838 0%, #1fa188 100%);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+
+.form-label {
+  color: #495057;
+}
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  // Validación del formulario
+  document.getElementById('editarEventoForm').addEventListener('submit', function(e) {
+    const titulo = this.querySelector('[name="titulo"]').value.trim();
+    const fecha = this.querySelector('[name="fecha"]').value;
+    const descripcion = this.querySelector('[name="descripcion"]').value.trim();
+    
+    if (!titulo || !fecha || !descripcion) {
+      e.preventDefault();
+      alert('Por favor, completa todos los campos obligatorios.');
+      return false;
+    }
+    
+    // Confirmar cambios
+    if (!confirm('¿Estás seguro de que deseas guardar los cambios?')) {
+      e.preventDefault();
+      return false;
+    }
+  });
+  
+  // Animación de entrada
+  document.querySelector('.card').style.opacity = '0';
+  document.querySelector('.card').style.transform = 'translateY(20px)';
+  
+  setTimeout(() => {
+    document.querySelector('.card').style.transition = 'all 0.6s ease';
+    document.querySelector('.card').style.opacity = '1';
+    document.querySelector('.card').style.transform = 'translateY(0)';
+  }, 100);
+});
+</script>
+{% endblock %}

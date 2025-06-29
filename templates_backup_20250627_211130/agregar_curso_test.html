@@ -1,0 +1,33 @@
+{% extends "index_master.html" %}
+
+{% block content %}
+<div class="right_col" role="main">
+  <div class="container">
+    <h1>Prueba de Agregar Curso</h1>
+    
+    {% if form %}
+      <p>✓ Formulario disponible</p>
+    {% else %}
+      <p>✗ Formulario no disponible</p>
+    {% endif %}
+    
+    {% if total_profesores %}
+      <p>✓ Profesores: {{ total_profesores }}</p>
+    {% endif %}
+    
+    {% if total_estudiantes %}
+      <p>✓ Estudiantes: {{ total_estudiantes }}</p>
+    {% endif %}
+    
+    {% if total_asignaturas %}
+      <p>✓ Asignaturas: {{ total_asignaturas }}</p>
+    {% endif %}
+    
+    <form method="post">
+      {% csrf_token %}
+      {{ form.as_p }}
+      <button type="submit">Crear Curso</button>
+    </form>
+  </div>
+</div>
+{% endblock %}

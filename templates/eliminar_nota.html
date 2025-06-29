@@ -1,0 +1,194 @@
+<!-- filepath: c:\Users\Danie\Desktop\Proyecto_Titulo\sma\templates\eliminar_nota.html -->
+{% extends "index_master.html" %}
+{% block content %}
+<div class="right_col" role="main">
+  <div class="container-fluid">
+    <!-- Mensajes -->
+    {% if messages %}
+      <div class="row mb-3">
+        <div class="col-12">
+          {% for message in messages %}
+            <div class="alert alert-{{ message.tags|default:'info' }} alert-dismissible fade show" role="alert">
+              {% if message.tags == 'success' %}
+                <i class="fas fa-check-circle me-2"></i>
+              {% elif message.tags == 'error' %}
+                <i class="fas fa-exclamation-triangle me-2"></i>
+              {% endif %}
+              {{ message }}
+              <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+          {% endfor %}
+        </div>
+      </div>
+    {% endif %}
+
+    <!-- Breadcrumb -->
+    <div class="row mb-3">
+      <div class="col-12">
+        <nav aria-label="breadcrumb">
+          <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'inicio' %}">Inicio</a></li>
+            <li class="breadcrumb-item"><a href="{% url 'ver_notas_curso' %}">Gestión de Notas</a></li>
+            <li class="breadcrumb-item active" aria-current="page">Eliminar Nota</li>
+          </ol>
+        </nav>
+      </div>
+    </div>
+
+    <!-- Header -->
+    <div class="row mb-4">
+      <div class="col-12">
+        <div class="bg-white p-4 rounded shadow-sm border">
+          <div class="d-flex justify-content-between align-items-center">
+            <div>
+              <h2 class="h3 text-danger mb-2">
+                <i class="fas fa-trash text-danger me-2"></i>Eliminar Nota
+              </h2>
+              <p class="text-muted mb-0">Confirma la eliminación de la calificación</p>
+            </div>
+            <div>
+              <a href="{% url 'ver_notas_curso' %}" class="btn btn-outline-secondary">
+                <i class="fas fa-arrow-left me-1"></i>Volver
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Información del contexto -->
+    <div class="row mb-4">
+      <div class="col-12">
+        <div class="card border-warning">
+          <div class="card-header bg-warning text-dark">
+            <h5 class="mb-0">
+              <i class="fas fa-exclamation-triangle me-2"></i>Información de la Calificación a Eliminar
+            </h5>
+          </div>
+          <div class="card-body">
+            <div class="row">
+              <div class="col-md-6">
+                <h6 class="fw-bold text-primary">Estudiante:</h6>
+                <div class="d-flex align-items-center mb-3">
+                  <i class="fas fa-user-graduate text-primary me-2"></i>
+                  <div>
+                    <div class="fw-bold">{{ estudiante.primer_nombre }} {{ estudiante.apellido_paterno }}</div>
+                    <small class="text-muted">{{ estudiante.codigo_estudiante }}</small>
+                  </div>
+                </div>
+              </div>
+              <div class="col-md-6">
+                <h6 class="fw-bold text-success">Asignatura:</h6>
+                <div class="d-flex align-items-center mb-3">
+                  <i class="fas fa-book text-success me-2"></i>
+                  <div>
+                    <div class="fw-bold">{{ asignatura.nombre }}</div>
+                    <small class="text-muted">{{ asignatura.codigo_asignatura }}</small>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="row justify-content-center">
+      <div class="col-md-8">
+        <div class="card border-danger shadow-sm">
+          <div class="card-header bg-danger text-white">
+            <h4 class="mb-0">
+              <i class="fas fa-exclamation-circle me-2"></i>Detalles de la Nota
+            </h4>
+          </div>
+          <div class="card-body">
+            <div class="row text-center mb-4">
+              <div class="col-3">
+                <div class="fw-bold text-primary">Evaluación</div>
+                <div class="h5 mt-2">{{ nota.nombre_evaluacion }}</div>
+              </div>
+              <div class="col-3">
+                <div class="fw-bold text-success">Puntaje</div>
+                <div class="h5 mt-2">{{ nota.puntaje }}</div>
+              </div>
+              <div class="col-3">
+                <div class="fw-bold text-info">Porcentaje</div>
+                <div class="h5 mt-2">{{ nota.porcentaje }}%</div>
+              </div>
+              <div class="col-3">
+                <div class="fw-bold text-warning">Fecha</div>
+                <div class="h5 mt-2">{{ nota.fecha_evaluacion|date:"d/m/Y" }}</div>
+              </div>
+            </div>
+
+            {% if nota.detalle %}
+            <div class="mb-3">
+              <h6 class="fw-bold">Detalle:</h6>
+              <p class="text-muted">{{ nota.detalle }}</p>
+            </div>
+            {% endif %}
+
+            {% if nota.descripcion %}
+            <div class="mb-4">
+              <h6 class="fw-bold">Descripción:</h6>
+              <p class="text-muted">{{ nota.descripcion }}</p>
+            </div>
+            {% endif %}
+
+            <div class="alert alert-danger mb-4">
+              <div class="d-flex">
+                <i class="fas fa-exclamation-triangle me-3 mt-1"></i>
+                <div>
+                  <h6 class="fw-bold mb-2">¡ADVERTENCIA!</h6>
+                  <p class="mb-0">
+                    ¿Estás seguro que deseas eliminar la nota <strong>{{ nota.nombre_evaluacion }}</strong> del estudiante <strong>{{ estudiante.primer_nombre }} {{ estudiante.apellido_paterno }}</strong>?
+                    Esta acción no se puede deshacer.
+                  </p>
+                </div>
+              </div>
+            </div>
+            <form method="post" class="text-center">
+              {% csrf_token %}
+              <div class="d-flex justify-content-center gap-3">
+                <a href="{% url 'ver_notas_curso' %}" class="btn btn-secondary btn-lg">
+                  <i class="fas fa-times me-1"></i>Cancelar
+                </a>
+                <button type="submit" class="btn btn-danger btn-lg" onclick="return confirm('¿Estás completamente seguro de eliminar esta nota? Esta acción no se puede deshacer.');">
+                  <i class="fas fa-trash me-1"></i>Confirmar Eliminación
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<style>
+.card {
+  border: 1px solid #dee2e6;
+}
+
+.fw-bold {
+  font-weight: 600;
+}
+
+.text-dark {
+  color: #212529 !important;
+}
+
+.btn-lg {
+  padding: 0.75rem 1.5rem;
+  font-size: 1.125rem;
+}
+
+.breadcrumb-item + .breadcrumb-item::before {
+  content: ">";
+}
+
+.gap-3 {
+  gap: 1rem;
+}
+</style>
+{% endblock %}

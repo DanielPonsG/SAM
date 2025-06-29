@@ -1,0 +1,648 @@
+{% extends "index_master.html" %}
+
+{% block content %}
+<div class="right_col" role="main">
+  <div class="container-fluid">
+    <!-- Header con estadísticas -->
+    <div class="row mb-4">
+      <div class="col-12">
+        <div class="page-title">
+          <div class="title_left">
+            <h1><i class="fa fa-users text-primary"></i> Gestión de Usuarios del Sistema</h1>
+            <p class="text-muted">Administra estudiantes y profesores registrados en el sistema</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Tarjetas de estadísticas -->
+    <div class="row mb-4">
+      <div class="col-lg-3 col-md-6">
+        <div class="card border-0 shadow-sm">
+          <div class="card-body">
+            <div class="d-flex align-items-center">
+              <div class="flex-shrink-0 bg-primary bg-gradient rounded-circle p-3">
+                <i class="fa fa-graduation-cap text-white fa-lg"></i>
+              </div>
+              <div class="flex-grow-1 ms-3">
+                <h3 class="mb-0 text-primary">{{ total_estudiantes }}</h3>
+                <small class="text-muted">Total Estudiantes</small>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="col-lg-3 col-md-6">
+        <div class="card border-0 shadow-sm">
+          <div class="card-body">
+            <div class="d-flex align-items-center">
+              <div class="flex-shrink-0 bg-success bg-gradient rounded-circle p-3">
+                <i class="fa fa-chalkboard-teacher text-white fa-lg"></i>
+              </div>
+              <div class="flex-grow-1 ms-3">
+                <h3 class="mb-0 text-success">{{ total_profesores }}</h3>
+                <small class="text-muted">Total Profesores</small>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="col-lg-3 col-md-6">
+        <div class="card border-0 shadow-sm">
+          <div class="card-body">
+            <div class="d-flex align-items-center">
+              <div class="flex-shrink-0 bg-info bg-gradient rounded-circle p-3">
+                <i class="fa fa-user-plus text-white fa-lg"></i>
+              </div>
+              <div class="flex-grow-1 ms-3">
+                <h3 class="mb-0 text-info">{{ nuevos_este_mes|default:"0" }}</h3>
+                <small class="text-muted">Nuevos este mes</small>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="col-lg-3 col-md-6">
+        <div class="card border-0 shadow-sm">
+          <div class="card-body">
+            <div class="d-flex align-items-center">
+              <div class="flex-shrink-0 bg-warning bg-gradient rounded-circle p-3">
+                <i class="fa fa-chart-line text-white fa-lg"></i>
+              </div>
+              <div class="flex-grow-1 ms-3">
+                <h3 class="mb-0 text-warning">{{ activos|default:"0" }}</h3>
+                <small class="text-muted">Usuarios Activos</small>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Sección de Estudiantes -->
+    <div class="row mb-5">
+      <div class="col-12">
+        <div class="card border-0 shadow">
+          <div class="card-header bg-gradient-primary text-white">
+            <div class="row align-items-center">
+              <div class="col">
+                <h4 class="mb-0"><i class="fa fa-graduation-cap me-2"></i> Lista de Estudiantes</h4>
+              </div>
+              <div class="col-auto">
+                <div class="d-flex gap-2">
+                  <button class="btn btn-light btn-sm" data-bs-toggle="modal" data-bs-target="#filtrosModal">
+                    <i class="fa fa-filter"></i> Filtros Avanzados
+                  </button>
+                  <button class="btn btn-light btn-sm" onclick="exportarDatos('estudiantes')">
+                    <i class="fa fa-download"></i> Exportar
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <div class="card-body">
+            <!-- Barra de búsqueda mejorada -->
+            <div class="row mb-4">
+              <div class="col-lg-8">
+                <form method="get" class="d-flex">
+                  <div class="input-group">
+                    <span class="input-group-text bg-light border-end-0">
+                      <i class="fa fa-search text-muted"></i>
+                    </span>
+                    <input type="text" name="filtro_estudiante" class="form-control border-start-0" 
+                           placeholder="Buscar por ID, nombre, apellido o código de estudiante..." 
+                           value="{{ request.GET.filtro_estudiante }}"
+                           style="border-left: none !important;">
+                    <button type="submit" class="btn btn-primary">
+                      <i class="fa fa-search me-1"></i> Buscar
+                    </button>
+                  </div>
+                </form>
+              </div>
+              <div class="col-lg-4">
+                <div class="d-flex gap-2">
+                  <a href="?filtro_estudiante=" class="btn btn-outline-secondary flex-fill">
+                    <i class="fa fa-undo me-1"></i> Limpiar
+                  </a>
+                  <button class="btn btn-outline-primary" onclick="location.reload()">
+                    <i class="fa fa-refresh me-1"></i> Actualizar
+                  </button>
+                </div>
+              </div>
+            </div>
+            
+            <!-- Indicador de resultados -->
+            {% if request.GET.filtro_estudiante %}
+              <div class="alert alert-info d-flex align-items-center mb-3">
+                <i class="fa fa-info-circle me-2"></i>
+                <span>Mostrando resultados para: <strong>"{{ request.GET.filtro_estudiante }}"</strong></span>
+              </div>
+            {% endif %}
+            
+            <!-- Tabla de estudiantes -->
+            <div class="table-responsive">
+              <table class="table table-hover align-middle">
+                <thead class="table-dark">
+                  <tr>
+                    <th style="width: 5%;" class="text-center">
+                      <div class="form-check">
+                        <input class="form-check-input" type="checkbox" id="selectAllEstudiantes">
+                      </div>
+                    </th>
+                    <th style="width: 8%;">ID</th>
+                    <th style="width: 15%;">Código</th>
+                    <th style="width: 25%;">Nombre Completo</th>
+                    <th style="width: 15%;">Documento</th>
+                    <th style="width: 12%;">Email</th>
+                    <th style="width: 10%;">F. Ingreso</th>
+                    <th style="width: 10%;" class="text-center">Acciones</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for estudiante in page_obj_estudiantes %}
+                    <tr class="student-row" data-id="{{ estudiante.id }}">
+                      <td class="text-center">
+                        <div class="form-check">
+                          <input class="form-check-input student-checkbox" type="checkbox" value="{{ estudiante.id }}">
+                        </div>
+                      </td>
+                      <td>
+                        <span class="badge bg-primary rounded-pill">{{ estudiante.id }}</span>
+                      </td>
+                      <td>
+                        <div class="d-flex align-items-center">
+                          <div class="avatar-sm bg-primary bg-gradient rounded-circle me-2 d-flex align-items-center justify-content-center">
+                            <i class="fa fa-graduation-cap text-white"></i>
+                          </div>
+                          <span class="fw-bold text-primary">{{ estudiante.codigo_estudiante }}</span>
+                        </div>
+                      </td>
+                      <td>
+                        <div>
+                          <div class="fw-bold">{{ estudiante.primer_nombre }} {{ estudiante.segundo_nombre|default:"" }}</div>
+                          <div class="text-muted small">{{ estudiante.apellido_paterno }} {{ estudiante.apellido_materno|default:"" }}</div>
+                        </div>
+                      </td>
+                      <td>
+                        <div>
+                          <span class="badge bg-light text-dark">{{ estudiante.get_tipo_documento_display }}</span>
+                          <div class="small text-muted mt-1">{{ estudiante.numero_documento }}</div>
+                        </div>
+                      </td>
+                      <td>
+                        <a href="mailto:{{ estudiante.email }}" class="text-decoration-none">
+                          <i class="fa fa-envelope text-muted me-1"></i>
+                          <span class="small">{{ estudiante.email|truncatechars:20 }}</span>
+                        </a>
+                      </td>
+                      <td>
+                        <span class="small text-muted">{{ estudiante.fecha_ingreso|date:"d/m/Y" }}</span>
+                      </td>
+                      <td class="text-center">
+                        <div class="btn-group" role="group">
+                          <button type="button" class="btn btn-sm btn-outline-primary" 
+                                  data-bs-toggle="tooltip" title="Ver detalles"
+                                  onclick="verDetalles('estudiante', {{ estudiante.id }})">
+                            <i class="fa fa-eye"></i>
+                          </button>
+                          <button type="button" class="btn btn-sm btn-outline-warning" 
+                                  data-bs-toggle="tooltip" title="Editar"
+                                  onclick="editarUsuario('estudiante', {{ estudiante.id }})">
+                            <i class="fa fa-edit"></i>
+                          </button>
+                          <button type="button" class="btn btn-sm btn-outline-danger" 
+                                  data-bs-toggle="tooltip" title="Eliminar"
+                                  onclick="eliminarUsuario('estudiante', {{ estudiante.id }})">
+                            <i class="fa fa-trash"></i>
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  {% empty %}
+                    <tr>
+                      <td colspan="8" class="text-center py-4">
+                        <div class="text-muted">
+                          <i class="fa fa-search fa-3x mb-3 opacity-50"></i>
+                          <h5>No se encontraron estudiantes</h5>
+                          <p>{% if request.GET.filtro_estudiante %}No hay resultados para tu búsqueda.{% else %}No hay estudiantes registrados.{% endif %}</p>
+                        </div>
+                      </td>
+                    </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+            
+            <!-- Paginación para estudiantes -->
+            {% if page_obj_estudiantes.has_other_pages %}
+              <nav aria-label="Paginación estudiantes" class="mt-4">
+                <ul class="pagination justify-content-center">
+                  {% if page_obj_estudiantes.has_previous %}
+                    <li class="page-item">
+                      <a class="page-link" href="?page_estudiantes={{ page_obj_estudiantes.previous_page_number }}{% if request.GET.filtro_estudiante %}&filtro_estudiante={{ request.GET.filtro_estudiante }}{% endif %}">
+                        <i class="fa fa-chevron-left"></i> Anterior
+                      </a>
+                    </li>
+                  {% endif %}
+                  
+                  {% for num in page_obj_estudiantes.paginator.page_range %}
+                    {% if page_obj_estudiantes.number == num %}
+                      <li class="page-item active">
+                        <span class="page-link">{{ num }}</span>
+                      </li>
+                    {% elif num > page_obj_estudiantes.number|add:'-3' and num < page_obj_estudiantes.number|add:'3' %}
+                      <li class="page-item">
+                        <a class="page-link" href="?page_estudiantes={{ num }}{% if request.GET.filtro_estudiante %}&filtro_estudiante={{ request.GET.filtro_estudiante }}{% endif %}">{{ num }}</a>
+                      </li>
+                    {% endif %}
+                  {% endfor %}
+                  
+                  {% if page_obj_estudiantes.has_next %}
+                    <li class="page-item">
+                      <a class="page-link" href="?page_estudiantes={{ page_obj_estudiantes.next_page_number }}{% if request.GET.filtro_estudiante %}&filtro_estudiante={{ request.GET.filtro_estudiante }}{% endif %}">
+                        Siguiente <i class="fa fa-chevron-right"></i>
+                      </a>
+                    </li>
+                  {% endif %}
+                </ul>
+              </nav>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Sección de Profesores -->
+    <div class="row">
+      <div class="col-12">
+        <div class="card border-0 shadow">
+          <div class="card-header bg-gradient-success text-white">
+            <div class="row align-items-center">
+              <div class="col">
+                <h4 class="mb-0"><i class="fa fa-chalkboard-teacher me-2"></i> Lista de Profesores</h4>
+              </div>
+              <div class="col-auto">
+                <div class="d-flex gap-2">
+                  <button class="btn btn-light btn-sm" onclick="exportarDatos('profesores')">
+                    <i class="fa fa-download"></i> Exportar
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <div class="card-body">
+            <!-- Barra de búsqueda para profesores -->
+            <div class="row mb-4">
+              <div class="col-lg-8">
+                <form method="get" class="d-flex">
+                  <div class="input-group">
+                    <span class="input-group-text bg-light border-end-0">
+                      <i class="fa fa-search text-muted"></i>
+                    </span>
+                    <input type="text" name="filtro_profesor" class="form-control border-start-0" 
+                           placeholder="Buscar por ID, nombre, apellido o código de profesor..." 
+                           value="{{ request.GET.filtro_profesor }}"
+                           style="border-left: none !important;">
+                    <button type="submit" class="btn btn-success">
+                      <i class="fa fa-search me-1"></i> Buscar
+                    </button>
+                  </div>
+                </form>
+              </div>
+              <div class="col-lg-4">
+                <div class="d-flex gap-2">
+                  <a href="?filtro_profesor=" class="btn btn-outline-secondary flex-fill">
+                    <i class="fa fa-undo me-1"></i> Limpiar
+                  </a>
+                  <button class="btn btn-outline-success" onclick="location.reload()">
+                    <i class="fa fa-refresh me-1"></i> Actualizar
+                  </button>
+                </div>
+              </div>
+            </div>
+            
+            <!-- Indicador de resultados para profesores -->
+            {% if request.GET.filtro_profesor %}
+              <div class="alert alert-success d-flex align-items-center mb-3">
+                <i class="fa fa-info-circle me-2"></i>
+                <span>Mostrando resultados para: <strong>"{{ request.GET.filtro_profesor }}"</strong></span>
+              </div>
+            {% endif %}
+            
+            <!-- Tabla de profesores -->
+            <div class="table-responsive">
+              <table class="table table-hover align-middle">
+                <thead class="table-dark">
+                  <tr>
+                    <th style="width: 5%;" class="text-center">
+                      <div class="form-check">
+                        <input class="form-check-input" type="checkbox" id="selectAllProfesores">
+                      </div>
+                    </th>
+                    <th style="width: 8%;">ID</th>
+                    <th style="width: 15%;">Código</th>
+                    <th style="width: 25%;">Nombre Completo</th>
+                    <th style="width: 15%;">Documento</th>
+                    <th style="width: 12%;">Email</th>
+                    <th style="width: 10%;">Especialidad</th>
+                    <th style="width: 10%;" class="text-center">Acciones</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for profesor in page_obj_profesores %}
+                    <tr class="teacher-row" data-id="{{ profesor.id }}">
+                      <td class="text-center">
+                        <div class="form-check">
+                          <input class="form-check-input teacher-checkbox" type="checkbox" value="{{ profesor.id }}">
+                        </div>
+                      </td>
+                      <td>
+                        <span class="badge bg-success rounded-pill">{{ profesor.id }}</span>
+                      </td>
+                      <td>
+                        <div class="d-flex align-items-center">
+                          <div class="avatar-sm bg-success bg-gradient rounded-circle me-2 d-flex align-items-center justify-content-center">
+                            <i class="fa fa-chalkboard-teacher text-white"></i>
+                          </div>
+                          <span class="fw-bold text-success">{{ profesor.codigo_profesor }}</span>
+                        </div>
+                      </td>
+                      <td>
+                        <div>
+                          <div class="fw-bold">{{ profesor.primer_nombre }} {{ profesor.segundo_nombre|default:"" }}</div>
+                          <div class="text-muted small">{{ profesor.apellido_paterno }} {{ profesor.apellido_materno|default:"" }}</div>
+                        </div>
+                      </td>
+                      <td>
+                        <div>
+                          <span class="badge bg-light text-dark">{{ profesor.get_tipo_documento_display }}</span>
+                          <div class="small text-muted mt-1">{{ profesor.numero_documento }}</div>
+                        </div>
+                      </td>
+                      <td>
+                        <a href="mailto:{{ profesor.email }}" class="text-decoration-none">
+                          <i class="fa fa-envelope text-muted me-1"></i>
+                          <span class="small">{{ profesor.email|truncatechars:20 }}</span>
+                        </a>
+                      </td>
+                      <td>
+                        <span class="badge bg-info text-dark">{{ profesor.especialidad|truncatechars:15 }}</span>
+                      </td>
+                      <td class="text-center">
+                        <div class="btn-group" role="group">
+                          <button type="button" class="btn btn-sm btn-outline-primary" 
+                                  data-bs-toggle="tooltip" title="Ver detalles"
+                                  onclick="verDetalles('profesor', {{ profesor.id }})">
+                            <i class="fa fa-eye"></i>
+                          </button>
+                          <button type="button" class="btn btn-sm btn-outline-warning" 
+                                  data-bs-toggle="tooltip" title="Editar"
+                                  onclick="editarUsuario('profesor', {{ profesor.id }})">
+                            <i class="fa fa-edit"></i>
+                          </button>
+                          <button type="button" class="btn btn-sm btn-outline-danger" 
+                                  data-bs-toggle="tooltip" title="Eliminar"
+                                  onclick="eliminarUsuario('profesor', {{ profesor.id }})">
+                            <i class="fa fa-trash"></i>
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  {% empty %}
+                    <tr>
+                      <td colspan="8" class="text-center py-4">
+                        <div class="text-muted">
+                          <i class="fa fa-search fa-3x mb-3 opacity-50"></i>
+                          <h5>No se encontraron profesores</h5>
+                          <p>{% if request.GET.filtro_profesor %}No hay resultados para tu búsqueda.{% else %}No hay profesores registrados.{% endif %}</p>
+                        </div>
+                      </td>
+                    </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+            
+            <!-- Paginación para profesores -->
+            {% if page_obj_profesores.has_other_pages %}
+              <nav aria-label="Paginación profesores" class="mt-4">
+                <ul class="pagination justify-content-center">
+                  {% if page_obj_profesores.has_previous %}
+                    <li class="page-item">
+                      <a class="page-link" href="?page_profesores={{ page_obj_profesores.previous_page_number }}{% if request.GET.filtro_profesor %}&filtro_profesor={{ request.GET.filtro_profesor }}{% endif %}">
+                        <i class="fa fa-chevron-left"></i> Anterior
+                      </a>
+                    </li>
+                  {% endif %}
+                  
+                  {% for num in page_obj_profesores.paginator.page_range %}
+                    {% if page_obj_profesores.number == num %}
+                      <li class="page-item active">
+                        <span class="page-link">{{ num }}</span>
+                      </li>
+                    {% elif num > page_obj_profesores.number|add:'-3' and num < page_obj_profesores.number|add:'3' %}
+                      <li class="page-item">
+                        <a class="page-link" href="?page_profesores={{ num }}{% if request.GET.filtro_profesor %}&filtro_profesor={{ request.GET.filtro_profesor }}{% endif %}">{{ num }}</a>
+                      </li>
+                    {% endif %}
+                  {% endfor %}
+                  
+                  {% if page_obj_profesores.has_next %}
+                    <li class="page-item">
+                      <a class="page-link" href="?page_profesores={{ page_obj_profesores.next_page_number }}{% if request.GET.filtro_profesor %}&filtro_profesor={{ request.GET.filtro_profesor }}{% endif %}">
+                        Siguiente <i class="fa fa-chevron-right"></i>
+                      </a>
+                    </li>
+                  {% endif %}
+                </ul>
+              </nav>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal de filtros avanzados -->
+<div class="modal fade" id="filtrosModal" tabindex="-1" aria-labelledby="filtrosModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="filtrosModalLabel">
+          <i class="fa fa-filter me-2"></i> Filtros Avanzados
+        </h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <form method="get">
+          <div class="row">
+            <div class="col-md-6">
+              <div class="mb-3">
+                <label class="form-label">Tipo de Usuario</label>
+                <select class="form-select" name="tipo_usuario">
+                  <option value="">Todos</option>
+                  <option value="estudiante">Solo Estudiantes</option>
+                  <option value="profesor">Solo Profesores</option>
+                </select>
+              </div>
+            </div>
+            <div class="col-md-6">
+              <div class="mb-3">
+                <label class="form-label">Género</label>
+                <select class="form-select" name="genero">
+                  <option value="">Todos</option>
+                  <option value="M">Masculino</option>
+                  <option value="F">Femenino</option>
+                  <option value="O">Otro</option>
+                </select>
+              </div>
+            </div>
+          </div>
+          <div class="row">
+            <div class="col-md-6">
+              <div class="mb-3">
+                <label class="form-label">Fecha desde</label>
+                <input type="date" class="form-control" name="fecha_desde">
+              </div>
+            </div>
+            <div class="col-md-6">
+              <div class="mb-3">
+                <label class="form-label">Fecha hasta</label>
+                <input type="date" class="form-control" name="fecha_hasta">
+              </div>
+            </div>
+          </div>
+        </form>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+        <button type="button" class="btn btn-primary" onclick="aplicarFiltros()">
+          <i class="fa fa-search me-1"></i> Aplicar Filtros
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Estilos adicionales -->
+<style>
+  .avatar-sm {
+    width: 35px;
+    height: 35px;
+    font-size: 14px;
+  }
+  
+  .bg-gradient-primary {
+    background: linear-gradient(135deg, #007bff, #0056b3) !important;
+  }
+  
+  .bg-gradient-success {
+    background: linear-gradient(135deg, #28a745, #1e7e34) !important;
+  }
+  
+  .table th {
+    border-top: none;
+    font-weight: 600;
+    font-size: 0.9rem;
+  }
+  
+  .table td {
+    vertical-align: middle;
+    border-top: 1px solid #e9ecef;
+  }
+  
+  .table-hover tbody tr:hover {
+    background-color: rgba(0, 123, 255, 0.05);
+  }
+  
+  .card {
+    border-radius: 15px;
+    overflow: hidden;
+  }
+  
+  .card-header {
+    border-bottom: none;
+  }
+  
+  .btn-group .btn {
+    border-radius: 6px !important;
+    margin: 0 1px;
+  }
+  
+  .page-link {
+    border-radius: 8px;
+    margin: 0 2px;
+    border: 1px solid #dee2e6;
+  }
+  
+  .page-item.active .page-link {
+    background-color: #007bff;
+    border-color: #007bff;
+  }
+  
+  .alert {
+    border-radius: 10px;
+    border: none;
+  }
+  
+  .badge {
+    font-size: 0.75rem;
+  }
+</style>
+
+<!-- JavaScript -->
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  // Inicializar tooltips
+  var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+  var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+    return new bootstrap.Tooltip(tooltipTriggerEl);
+  });
+  
+  // Seleccionar todos los estudiantes
+  document.getElementById('selectAllEstudiantes').addEventListener('change', function() {
+    var checkboxes = document.querySelectorAll('.student-checkbox');
+    checkboxes.forEach(function(checkbox) {
+      checkbox.checked = this.checked;
+    }, this);
+  });
+  
+  // Seleccionar todos los profesores
+  document.getElementById('selectAllProfesores').addEventListener('change', function() {
+    var checkboxes = document.querySelectorAll('.teacher-checkbox');
+    checkboxes.forEach(function(checkbox) {
+      checkbox.checked = this.checked;
+    }, this);
+  });
+});
+
+function verDetalles(tipo, id) {
+  // Implementar vista de detalles
+  alert('Ver detalles de ' + tipo + ' con ID: ' + id);
+}
+
+function editarUsuario(tipo, id) {
+  // Redirigir a la página de edición
+  window.location.href = '/modificar/?tipo=' + tipo + '&id=' + id;
+}
+
+function eliminarUsuario(tipo, id) {
+  if (confirm('¿Está seguro de que desea eliminar este ' + tipo + '?')) {
+    window.location.href = '/eliminar/?tipo=' + tipo + '&id=' + id;
+  }
+}
+
+function exportarDatos(tipo) {
+  // Implementar exportación de datos
+  alert('Exportando datos de ' + tipo + '...');
+}
+
+function aplicarFiltros() {
+  // Implementar aplicación de filtros
+  document.querySelector('#filtrosModal form').submit();
+}
+</script>
+{% endblock %}

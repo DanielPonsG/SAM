@@ -1,0 +1,469 @@
+{% extends "index_master.html" %}
+{% block content %}
+<div class="right_col" role="main">
+  <div class="container-fluid">
+    <!-- Mensajes de éxito y error -->
+    {% if messages %}
+      <div class="row mb-3">
+        <div class="col-12">
+          {% for message in messages %}
+            <div class="alert alert-{{ message.tags|default:'info' }} alert-dismissible fade show" role="alert">
+              {% if message.tags == 'success' %}
+                <i class="fas fa-check-circle me-2"></i>
+              {% elif message.tags == 'error' %}
+                <i class="fas fa-exclamation-triangle me-2"></i>
+              {% elif message.tags == 'warning' %}
+                <i class="fas fa-exclamation-circle me-2"></i>
+              {% else %}
+                <i class="fas fa-info-circle me-2"></i>
+              {% endif %}
+              {{ message }}
+              <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+          {% endfor %}
+        </div>
+      </div>
+    {% endif %}
+    <!-- Header -->
+    <div class="row mb-4">
+      <div class="col-12">
+        <div class="bg-white p-4 rounded shadow-sm border">
+          <div class="d-flex justify-content-between align-items-center">
+            <div>
+              <h2 class="h3 text-dark mb-2">
+                <i class="fas fa-graduation-cap text-primary me-2"></i>Listado de Cursos
+              </h2>
+              <p class="text-muted mb-0">Gestiona los cursos del sistema escolar</p>
+            </div>
+            <div>
+              {% if user.perfil.tipo_usuario == 'director' or user.perfil.tipo_usuario == 'administrador' %}
+                <a href="{% url 'agregar_curso' %}" class="btn btn-primary">
+                  <i class="fas fa-plus me-1"></i>Nuevo Curso
+                </a>
+              {% endif %}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <!-- Estadísticas -->
+    <div class="row mb-4">
+      <div class="col-md-2">
+        <div class="card border shadow-sm bg-white">
+          <div class="card-body text-center">
+            <i class="fas fa-graduation-cap fa-2x text-primary mb-2"></i>
+            <h3 class="mb-0 text-dark">{{ total_cursos }}</h3>
+            <p class="mb-0 text-muted">Total Cursos</p>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-2">
+        <div class="card border shadow-sm bg-white">
+          <div class="card-body text-center">
+            <i class="fas fa-user-graduate fa-2x text-info mb-2"></i>
+            <h3 class="mb-0 text-dark">{{ total_estudiantes_asignados }}</h3>
+            <p class="mb-0 text-muted">Estudiantes Asignados</p>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-2">
+        <div class="card border shadow-sm bg-white">
+          <div class="card-body text-center">
+            <i class="fas fa-user-clock fa-2x text-warning mb-2"></i>
+            <h3 class="mb-0 text-dark">{{ total_estudiantes_pendientes }}</h3>
+            <p class="mb-0 text-muted">Estudiantes Pendientes</p>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-2">
+        <div class="card border shadow-sm bg-white">
+          <div class="card-body text-center">
+            <i class="fas fa-chalkboard-teacher fa-2x text-success mb-2"></i>
+            <h3 class="mb-0 text-dark">{{ profesores_jefe_asignados }}</h3>
+            <p class="mb-0 text-muted">Profesores Jefe</p>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-2">
+        <div class="card border shadow-sm bg-white">
+          <div class="card-body text-center">
+            <i class="fas fa-book fa-2x text-info mb-2"></i>
+            <h3 class="mb-0 text-dark">{{ total_asignaturas_asignadas }}</h3>
+            <p class="mb-0 text-muted">Asignaturas Asignadas</p>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-2">
+        <div class="card border shadow-sm bg-white">
+          <div class="card-body text-center">
+            <i class="fas fa-calendar-alt fa-2x text-dark mb-2"></i>
+            <h3 class="mb-0 text-dark">{{ anio_actual }}</h3>
+            <p class="mb-0 text-muted">Año Académico</p>
+          </div>
+        </div>
+      </div>
+    </div>
+    <!-- Tabla de cursos -->
+    <div class="card border shadow-sm">
+      <div class="card-header bg-light border-bottom">
+        <h5 class="mb-0 text-dark">
+          <i class="fas fa-list me-2"></i>Cursos Registrados
+        </h5>
+      </div>
+      <div class="card-body p-0">
+        {% if cursos %}
+          <div class="table-responsive">
+            <table class="table table-hover mb-0">
+              <thead class="table-light">
+                <tr>
+                  <th width="20%">Curso</th>
+                  <th width="30%">Profesor Jefe</th>
+                  <th width="15%">Estudiantes</th>
+                  <th width="15%">Asignaturas</th>
+                  <th width="20%">Acciones</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for curso in cursos %}
+                <tr>
+                  <td>
+                    <div class="d-flex align-items-center">
+                      <div class="border rounded px-2 py-1 me-2 text-primary fw-bold" style="min-width: 60px; text-align: center;">
+                        {{ curso.get_nivel_display }}{{ curso.paralelo }}
+                      </div>
+                      <span class="fw-medium text-dark">{{ curso }}</span>
+                    </div>
+                  </td>
+                  <td>
+                    {% if curso.profesor_jefe %}
+                      <div class="d-flex align-items-center">
+                        <i class="fas fa-chalkboard-teacher text-success me-2"></i>
+                        <div>
+                          <div class="fw-bold">{{ curso.profesor_jefe.primer_nombre }} {{ curso.profesor_jefe.apellido_paterno }}</div>
+                          <small class="text-muted">{{ curso.profesor_jefe.email }}</small>
+                        </div>
+                      </div>
+                    {% else %}
+                      <span class="text-muted">
+                        <i class="fas fa-user-slash me-1"></i>Sin asignar
+                      </span>
+                    {% endif %}
+                  </td>
+                  <td>
+                    <div class="d-flex align-items-center">
+                      <span class="border rounded px-2 py-1 me-2 text-dark fw-medium">{{ curso.estudiantes.count }}</span>
+                      {% if curso.estudiantes.count > 0 %}
+                        <button class="btn btn-link btn-sm p-0 text-primary" type="button"
+                                onclick="toggleEstudiantes('estudiantes-{{ curso.id }}', this)">
+                          <i class="fas fa-eye me-1"></i>Ver
+                        </button>
+                      {% else %}
+                        <span class="text-muted small">Ninguno</span>
+                      {% endif %}
+                    </div>
+                  </td>
+                  <td>
+                    <div class="d-flex align-items-center">
+                      <span class="border rounded px-2 py-1 me-2 text-dark fw-medium">{{ curso.asignaturas.count }}</span>
+                      {% if curso.asignaturas.count > 0 %}
+                        <button class="btn btn-link btn-sm p-0 text-primary" type="button"
+                                onclick="toggleAsignaturas('asignaturas-{{ curso.id }}', this)">
+                          <i class="fas fa-eye me-1"></i>Ver
+                        </button>
+                      {% else %}
+                        <span class="text-muted small">Ninguna</span>
+                      {% endif %}
+                    </div>
+                  </td>
+                  <td>
+                    <div class="btn-group btn-group-sm" role="group">
+                      {% if puede_editar %}
+                        <a href="{% url 'editar_curso' curso.id %}" class="btn btn-light border" title="Editar curso">
+                          <i class="fas fa-edit text-primary"></i>
+                        </a>
+                        <button type="button" class="btn btn-light border" 
+                                onclick="confirmarEliminacion('{{ curso }}', {{ curso.id }})" title="Eliminar curso">
+                          <i class="fas fa-trash text-danger"></i>
+                        </button>
+                      {% endif %}
+                      <button type="button" class="btn btn-light border" 
+                              onclick="verDetalleCurso({{ curso.id }})" title="Ver detalles del curso">
+                        <i class="fas fa-info-circle text-info"></i>
+                      </button>
+                      <button type="button" class="btn btn-light border" title="Ver horarios">
+                        <i class="fas fa-calendar text-success"></i>
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+                
+                <!-- Fila expandible para estudiantes -->
+                {% if curso.estudiantes.count > 0 %}
+                <tr id="estudiantes-{{ curso.id }}" style="display:none;">
+                  <td colspan="6" class="bg-light">
+                    <div class="p-3">
+                      <h6 class="fw-bold mb-2">
+                        <i class="fas fa-user-graduate text-primary me-1"></i>
+                        Estudiantes del curso {{ curso }}
+                      </h6>
+                      <div class="row">
+                        {% for estudiante in curso.estudiantes.all %}
+                          <div class="col-md-4 mb-2">
+                            <div class="d-flex align-items-center">
+                              <i class="fas fa-user text-primary me-2"></i>
+                              <div>
+                                <div class="fw-bold">{{ estudiante.primer_nombre }} {{ estudiante.apellido_paterno }}</div>
+                                <small class="text-muted">{{ estudiante.codigo_estudiante }}</small>
+                              </div>
+                            </div>
+                          </div>
+                        {% endfor %}
+                      </div>
+                    </div>
+                  </td>
+                </tr>
+                {% endif %}
+                
+                <!-- Fila expandible para asignaturas -->
+                {% if curso.asignaturas.count > 0 %}
+                <tr id="asignaturas-{{ curso.id }}" style="display:none;">
+                  <td colspan="6" class="bg-light">
+                    <div class="p-3">
+                      <h6 class="fw-bold mb-2">
+                        <i class="fas fa-book text-success me-1"></i>
+                        Asignaturas del curso {{ curso }}
+                      </h6>
+                      <div class="row">
+                        {% for asignatura in curso.asignaturas.all %}
+                          <div class="col-md-6 mb-2">
+                            <div class="d-flex align-items-center">
+                              <i class="fas fa-book-open text-success me-2"></i>
+                              <div>
+                                <div class="fw-bold">{{ asignatura.nombre }}</div>
+                                <small class="text-muted">{{ asignatura.codigo_asignatura }}</small>
+                              </div>
+                            </div>
+                          </div>
+                        {% endfor %}
+                      </div>
+                    </div>
+                  </td>
+                </tr>
+                {% endif %}
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        {% else %}
+          <div class="text-center py-5">
+            <i class="fas fa-graduation-cap fa-3x text-muted mb-3"></i>
+            <h5 class="text-muted mb-2">No hay cursos registrados</h5>
+            <p class="text-muted mb-3">Comienza creando tu primer curso en el sistema</p>
+            {% if user.perfil.tipo_usuario == 'director' or user.perfil.tipo_usuario == 'administrador' %}
+              <a href="{% url 'agregar_curso' %}" class="btn btn-primary">
+                <i class="fas fa-plus me-1"></i>Crear Primer Curso
+              </a>
+            {% endif %}
+          </div>
+        {% endif %}
+      </div>
+    </div>
+    <!-- Sección de estudiantes pendientes -->
+    {% if estudiantes_pendientes and puede_editar %}
+    <div class="card border shadow-sm mt-4">
+      <div class="card-header bg-warning bg-opacity-10 border-bottom">
+        <div class="d-flex justify-content-between align-items-center">
+          <h5 class="mb-0 text-dark">
+            <i class="fas fa-user-clock me-2 text-warning"></i>Estudiantes Pendientes de Asignación ({{ total_estudiantes_pendientes }})
+          </h5>
+          <button class="btn btn-sm btn-outline-warning" type="button" data-bs-toggle="collapse" 
+                  data-bs-target="#seccionPendientes" aria-expanded="false">
+            <i class="fas fa-chevron-down me-1"></i>Ver/Ocultar
+          </button>
+        </div>
+      </div>
+      <div class="collapse" id="seccionPendientes">
+        <div class="card-body">
+          <div class="row">
+            <!-- Listado de estudiantes pendientes -->
+            <div class="col-md-8">
+              <h6 class="fw-bold mb-3">
+                <i class="fas fa-list me-1"></i>Estudiantes sin curso asignado para {{ anio_actual }}
+              </h6>
+              {% if estudiantes_pendientes %}
+                <div class="row">
+                  {% for estudiante in estudiantes_pendientes %}
+                    <div class="col-md-6 mb-2">
+                      <div class="d-flex align-items-center p-2 border rounded">
+                        <i class="fas fa-user text-warning me-2"></i>
+                        <div class="flex-grow-1">
+                          <div class="fw-bold">{{ estudiante.primer_nombre }} {{ estudiante.apellido_paterno }}</div>
+                          <small class="text-muted">{{ estudiante.codigo_estudiante }} - {{ estudiante.email }}</small>
+                        </div>
+                      </div>
+                    </div>
+                  {% endfor %}
+                </div>
+              {% else %}
+                <div class="text-center py-3">
+                  <i class="fas fa-check-circle fa-2x text-success mb-2"></i>
+                  <p class="text-muted mb-0">¡Excelente! Todos los estudiantes están asignados a cursos.</p>
+                </div>
+              {% endif %}
+            </div>
+            
+            <!-- Formulario de asignación rápida -->
+            <div class="col-md-4">
+              <h6 class="fw-bold mb-3">
+                <i class="fas fa-user-plus me-1"></i>Asignación Rápida
+              </h6>
+              {% if estudiantes_pendientes %}
+                <form method="post" class="border rounded p-3 bg-light">
+                  {% csrf_token %}
+                  <input type="hidden" name="asignar_estudiante" value="1">
+                  
+                  <div class="mb-3">
+                    <label for="{{ form_asignar.estudiante.id_for_label }}" class="form-label">
+                      {{ form_asignar.estudiante.label }}
+                    </label>
+                    {{ form_asignar.estudiante }}
+                    {% if form_asignar.estudiante.help_text %}
+                      <small class="form-text text-muted">{{ form_asignar.estudiante.help_text }}</small>
+                    {% endif %}
+                  </div>
+                  
+                  <div class="mb-3">
+                    <label for="{{ form_asignar.curso.id_for_label }}" class="form-label">
+                      {{ form_asignar.curso.label }}
+                    </label>
+                    {{ form_asignar.curso }}
+                    {% if form_asignar.curso.help_text %}
+                      <small class="form-text text-muted">{{ form_asignar.curso.help_text }}</small>
+                    {% endif %}
+                  </div>
+                  
+                  <button type="submit" class="btn btn-warning w-100">
+                    <i class="fas fa-user-plus me-1"></i>Asignar Estudiante
+                  </button>
+                </form>
+              {% else %}
+                <div class="text-center py-3 border rounded bg-light">
+                  <i class="fas fa-info-circle text-info mb-2"></i>
+                  <p class="text-muted mb-0 small">No hay estudiantes pendientes para asignar.</p>
+                </div>
+              {% endif %}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    {% endif %}
+  </div>
+</div>
+<!-- JavaScript -->
+<script>
+function toggleEstudiantes(id, btn) {
+  var fila = document.getElementById(id);
+  var icon = btn.querySelector('i');
+  
+  if (fila.style.display === "none") {
+    fila.style.display = "";
+    icon.className = "fas fa-eye-slash me-1";
+    btn.innerHTML = '<i class="fas fa-eye-slash me-1"></i>Ocultar';
+  } else {
+    fila.style.display = "none";
+    icon.className = "fas fa-eye me-1";
+    btn.innerHTML = '<i class="fas fa-eye me-1"></i>Ver';
+  }
+}
+
+function toggleAsignaturas(id, btn) {
+  var fila = document.getElementById(id);
+  var icon = btn.querySelector('i');
+  
+  if (fila.style.display === "none") {
+    fila.style.display = "";
+    icon.className = "fas fa-eye-slash me-1";
+    btn.innerHTML = '<i class="fas fa-eye-slash me-1"></i>Ocultar';
+  } else {
+    fila.style.display = "none";
+    icon.className = "fas fa-eye me-1";
+    btn.innerHTML = '<i class="fas fa-eye me-1"></i>Ver';
+  }
+}
+
+function verDetalleCurso(cursoId) {
+  // Expandir las filas de estudiantes y asignaturas para el curso
+  var estudiantesId = 'estudiantes-' + cursoId;
+  var asignaturasId = 'asignaturas-' + cursoId;
+  
+  var filaEstudiantes = document.getElementById(estudiantesId);
+  var filaAsignaturas = document.getElementById(asignaturasId);
+  
+  if (filaEstudiantes && filaEstudiantes.style.display === "none") {
+    filaEstudiantes.style.display = "";
+  }
+  
+  if (filaAsignaturas && filaAsignaturas.style.display === "none") {
+    filaAsignaturas.style.display = "";
+  }
+  
+  // Scroll a la posición del curso
+  var filaTargetCurso = document.querySelector(`[data-curso-id="${cursoId}"]`);
+  if (filaTargetCurso) {
+    filaTargetCurso.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }
+}
+
+function confirmarEliminacion(nombreCurso, cursoId) {
+  if (confirm(`¿Estás seguro de que deseas eliminar el curso "${nombreCurso}"?\n\nEsta acción no se puede deshacer y eliminará:\n- Todas las asignaciones de estudiantes\n- Todas las asignaciones de asignaturas\n- Todos los horarios asociados\n\n¿Continuar?`)) {
+    // Aquí puedes agregar la lógica para eliminar el curso
+    window.location.href = `/cursos/eliminar/${cursoId}/`;
+  }
+}
+
+// Añadir atributos de curso a las filas para el scroll
+document.addEventListener('DOMContentLoaded', function() {
+  // Añadir data-attributes a las filas principales de cursos
+  var filasConAcciones = document.querySelectorAll('table tbody tr');
+  filasConAcciones.forEach(function(fila, index) {
+    // Solo a las filas principales (que tienen botones de acciones)
+    if (fila.querySelector('.btn-group')) {
+      // Asumimos que cada tercera fila es una fila principal (curso, estudiantes, asignaturas)
+      var cursoId = fila.querySelector('[onclick*="confirmarEliminacion"]');
+      if (cursoId) {
+        var id = cursoId.getAttribute('onclick').match(/\d+/)[0];
+        fila.setAttribute('data-curso-id', id);
+      }
+    }
+  });
+});
+</script>
+<!-- Estilos simples -->
+<style>
+.table-hover tbody tr:hover {
+  background-color: #f8f9fa;
+}
+
+.btn-group-sm > .btn {
+  border-radius: 4px;
+  margin: 0 1px;
+}
+
+.card {
+  border: 1px solid #dee2e6;
+}
+
+.border {
+  border: 1px solid #dee2e6 !important;
+}
+
+.fw-medium {
+  font-weight: 500;
+}
+
+.text-dark {
+  color: #212529 !important;
+}
+</style>
+{% endblock %}

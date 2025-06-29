@@ -1,0 +1,583 @@
+{% extends "index_master.html" %}
+{% block content %}
+<div class="right_col" role="main">
+  <div class="container-fluid">
+    <div class="row">
+      <div class="col-md-12">
+        <div class="page-title">
+          <div class="title_left">
+            <h3>Gestionar Horarios - {{ asignatura.nombre }}</h3>
+            <p class="text-muted">Código: {{ asignatura.codigo_asignatura }}</p>
+          </div>
+          <div class="title_right">
+            <div class="col-md-5 col-sm-5 col-xs-12 form-group pull-right top_search">
+              <a href="{% url 'listar_asignaturas' %}" class="btn btn-default">
+                <i class="fa fa-arrow-left"></i> Volver a Asignaturas
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Información de la asignatura -->
+    <div class="row">
+      <div class="col-md-12">
+        <div class="x_panel">
+          <div class="x_title">
+            <h2>Información de la Asignatura</h2>
+            <div class="clearfix"></div>
+          </div>
+          <div class="x_content">
+            <div class="row">
+              <div class="col-md-6">
+                <p><strong>Nombre:</strong> {{ asignatura.nombre }}</p>
+                <p><strong>Código:</strong> {{ asignatura.codigo_asignatura }}</p>
+              </div>
+              <div class="col-md-6">
+                <p><strong>Profesor:</strong> 
+                  {% if asignatura.profesor_responsable %}
+                    {{ asignatura.profesor_responsable.primer_nombre }} {{ asignatura.profesor_responsable.apellido_paterno }}
+                  {% else %}
+                    <span class="text-danger">Sin asignar</span>
+                  {% endif %}
+                </p>
+                <p><strong>Descripción:</strong> 
+                  {{ asignatura.descripcion|default:"Sin descripción" }}
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Formulario para agregar horario -->
+    <div class="row">
+      <div class="col-md-12">
+        <div class="x_panel">
+          <div class="x_title">
+            <h2><i class="fa fa-plus"></i> Agregar Nuevo Horario</h2>
+            <div class="clearfix"></div>
+          </div>
+          <div class="x_content">
+            <form id="formAgregarHorario" class="form-horizontal form-label-left">
+              {% csrf_token %}
+              <div class="row">
+                <div class="col-md-3">
+                  <div class="form-group">
+                    <label class="control-label" for="curso_id">Curso:</label>
+                    <select class="form-control" id="curso_id" name="curso_id" required>
+                      <option value="">-- Seleccionar Curso --</option>
+                      {% for curso in cursos_disponibles %}
+                      <option value="{{ curso.id }}">{{ curso.nombre_completo }}</option>
+                      {% endfor %}
+                    </select>
+                  </div>
+                </div>
+                <div class="col-md-2">
+                  <div class="form-group">
+                    <label class="control-label" for="dia">Día:</label>
+                    <select class="form-control" id="dia" name="dia" required>
+                      <option value="">-- Día --</option>
+                      {% for value, label in dias_semana %}
+                      <option value="{{ value }}">{{ label }}</option>
+                      {% endfor %}
+                    </select>
+                  </div>
+                </div>
+                <div class="col-md-2">
+                  <div class="form-group">
+                    <label class="control-label" for="hora_inicio">Hora Inicio:</label>
+                    <input type="time" class="form-control" id="hora_inicio" name="hora_inicio" required>
+                  </div>
+                </div>
+                <div class="col-md-2">
+                  <div class="form-group">
+                    <label class="control-label" for="hora_fin">Hora Fin:</label>
+                    <input type="time" class="form-control" id="hora_fin" name="hora_fin" required>
+                  </div>
+                </div>
+                <div class="col-md-3">
+                  <div class="form-group">
+                    <label class="control-label">&nbsp;</label>
+                    <div>
+                      <button type="submit" class="btn btn-success">
+                        <i class="fa fa-plus"></i> Agregar Horario
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Lista de horarios actuales -->
+    <div class="row">
+      <div class="col-md-12">
+        <div class="x_panel">
+          <div class="x_title">
+            <h2><i class="fa fa-clock-o"></i> Horarios Actuales</h2>
+            <div class="clearfix"></div>
+          </div>
+          <div class="x_content">
+            {% if horarios_actuales %}
+            <div class="table-responsive">
+              <table class="table table-striped jambo_table">
+                <thead>
+                  <tr class="headings">
+                    <th class="column-title">Curso</th>
+                    <th class="column-title">Día</th>
+                    <th class="column-title">Hora Inicio</th>
+                    <th class="column-title">Hora Fin</th>
+                    <th class="column-title no-link last">Acciones</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for horario in horarios_actuales %}
+                  <tr class="even pointer">
+                    <td>
+                      <strong>{{ horario.curso.nombre_completo }}</strong>
+                      <br><small class="text-muted">{{ horario.curso.estudiantes.count }} estudiante{{ horario.curso.estudiantes.count|pluralize }}</small>
+                    </td>
+                    <td>
+                      <span class="badge badge-primary">{{ horario.get_dia_display }}</span>
+                    </td>
+                    <td>{{ horario.hora_inicio|time:"H:i" }}</td>
+                    <td>{{ horario.hora_fin|time:"H:i" }}</td>
+                    <td class="last">
+                      <button type="button" class="btn btn-danger btn-sm" 
+                              onclick="eliminarHorario({{ horario.id }})"
+                              title="Eliminar horario">
+                        <i class="fa fa-trash"></i> Eliminar
+                      </button>
+                    </td>
+                  </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+            {% else %}
+            <div class="alert alert-info text-center">
+              <i class="fa fa-info-circle"></i>
+              No hay horarios configurados para esta asignatura.
+              <br>Utiliza el formulario superior para agregar el primer horario.
+            </div>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<style>
+.schedule-table {
+    font-size: 14px;
+}
+
+.schedule-table th {
+    background-color: #f8f9fa;
+    text-align: center;
+    font-weight: bold;
+}
+
+.schedule-table .time-slot {
+    background-color: #e9ecef;
+    font-weight: bold;
+    text-align: center;
+    width: 100px;
+}
+
+.schedule-table td {
+    text-align: center;
+    vertical-align: middle;
+    height: 40px;
+}
+
+.alert {
+    border-radius: 5px;
+}
+
+.badge {
+    font-size: 11px;
+}
+
+@media (max-width: 768px) {
+    .form-horizontal .form-group {
+        margin-bottom: 10px;
+    }
+}
+</style>
+
+<script>
+// Manejar envío del formulario para agregar horario
+$('#formAgregarHorario').on('submit', function(e) {
+    e.preventDefault();
+    
+    const formData = new FormData(this);
+    
+    $.ajax({
+        url: '{% url "gestionar_horarios_asignatura" asignatura.id %}',
+        method: 'POST',
+        data: formData,
+        processData: false,
+        contentType: false,
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest'
+        },
+        success: function(response) {
+            if (response.success) {
+                showAlert('success', response.message);
+                
+                // Limpiar formulario
+                $('#formAgregarHorario')[0].reset();
+                
+                // Recargar página después de un momento
+                setTimeout(function() {
+                    location.reload();
+                }, 1500);
+            } else {
+                showAlert('danger', response.error || 'Error al agregar horario');
+            }
+        },
+        error: function(xhr, status, error) {
+            showAlert('danger', 'Error de conexión: ' + error);
+        }
+    });
+});
+
+// Función para eliminar horario
+function eliminarHorario(horarioId) {
+    if (!confirm('¿Está seguro de eliminar este horario?')) {
+        return;
+    }
+    
+    $.ajax({
+        url: '{% url "eliminar_horario_ajax" %}',
+        method: 'POST',
+        data: {
+            'horario_id': horarioId,
+            'csrfmiddlewaretoken': '{{ csrf_token }}'
+        },
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest'
+        },
+        success: function(response) {
+            if (response.success) {
+                showAlert('success', response.message);
+                setTimeout(function() {
+                    location.reload();
+                }, 1500);
+            } else {
+                showAlert('danger', response.error || 'Error al eliminar horario');
+            }
+        },
+        error: function(xhr, status, error) {
+            showAlert('danger', 'Error de conexión: ' + error);
+        }
+    });
+}
+
+// Función para mostrar alertas
+function showAlert(type, message) {
+    const alertHtml = `
+        <div class="alert alert-${type} alert-dismissible fade show" role="alert" style="position: fixed; top: 20px; right: 20px; z-index: 9999; min-width: 300px;">
+            ${message}
+            <button type="button" class="close" data-dismiss="alert">&times;</button>
+        </div>
+    `;
+    
+    $('body').append(alertHtml);
+    
+    // Auto-hide after 5 seconds
+    setTimeout(function() {
+        $('.alert').fadeOut();
+    }, 5000);
+}
+
+// Validación en tiempo real
+$('#hora_inicio, #hora_fin').on('change', function() {
+    const horaInicio = $('#hora_inicio').val();
+    const horaFin = $('#hora_fin').val();
+    
+    if (horaInicio && horaFin) {
+        if (horaInicio >= horaFin) {
+            showAlert('warning', 'La hora de inicio debe ser menor que la hora de fin');
+            $('#hora_fin').focus();
+        }
+    }
+});
+
+// Inicialización
+$(document).ready(function() {
+    // Configurar hora por defecto
+    if (!$('#hora_inicio').val()) {
+        $('#hora_inicio').val('08:00');
+    }
+    if (!$('#hora_fin').val()) {
+        $('#hora_fin').val('09:00');
+    }
+});
+</script>
+        </div>
+      </div>
+    </div>
+
+    <!-- Agregar Nuevo Horario -->
+    <div class="row">
+      <div class="col-md-12">
+        <div class="x_panel">
+          <div class="x_title">
+            <h2>Agregar Nuevo Horario</h2>
+            <ul class="nav navbar-right panel_toolbox">
+              <li><a class="collapse-link"><i class="fa fa-chevron-up"></i></a></li>
+            </ul>
+            <div class="clearfix"></div>
+          </div>
+          <div class="x_content">
+            {% if cursos_disponibles %}
+            <form method="post" class="form-horizontal form-label-left">
+              {% csrf_token %}
+              <input type="hidden" name="action" value="agregar_horario">
+              
+              <div class="row">
+                <div class="col-md-3">
+                  <div class="form-group">
+                    <label class="control-label" for="curso">Curso <span class="required">*</span></label>
+                    <select class="form-control" id="curso" name="curso" required>
+                      <option value="">Seleccionar curso...</option>
+                      {% for curso in cursos_disponibles %}
+                      <option value="{{ curso.id }}">{{ curso.nombre }} - {{ curso.nivel }}</option>
+                      {% endfor %}
+                    </select>
+                  </div>
+                </div>
+                <div class="col-md-3">
+                  <div class="form-group">
+                    <label class="control-label" for="dia">Día <span class="required">*</span></label>
+                    <select class="form-control" id="dia" name="dia" required>
+                      <option value="">Seleccionar día...</option>
+                      {% for value, label in dias_choices %}
+                      <option value="{{ value }}">{{ label }}</option>
+                      {% endfor %}
+                    </select>
+                  </div>
+                </div>
+                <div class="col-md-2">
+                  <div class="form-group">
+                    <label class="control-label" for="hora_inicio">Hora Inicio <span class="required">*</span></label>
+                    <input type="time" class="form-control" id="hora_inicio" name="hora_inicio" required>
+                  </div>
+                </div>
+                <div class="col-md-2">
+                  <div class="form-group">
+                    <label class="control-label" for="hora_fin">Hora Fin <span class="required">*</span></label>
+                    <input type="time" class="form-control" id="hora_fin" name="hora_fin" required>
+                  </div>
+                </div>
+                <div class="col-md-2">
+                  <div class="form-group">
+                    <label class="control-label">&nbsp;</label>
+                    <div>
+                      <button type="submit" class="btn btn-success btn-block">
+                        <i class="fa fa-plus"></i> Agregar
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </form>
+            {% else %}
+            <div class="alert alert-warning">
+              <i class="fa fa-warning"></i>
+              Esta asignatura no tiene cursos asociados. Debe asociar cursos antes de poder crear horarios.
+            </div>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Lista de Horarios Existentes -->
+    <div class="row">
+      <div class="col-md-12">
+        <div class="x_panel">
+          <div class="x_title">
+            <h2>Horarios Existentes</h2>
+            <div class="clearfix"></div>
+          </div>
+          <div class="x_content">
+            {% if horarios %}
+            <div class="table-responsive">
+              <table class="table table-striped jambo_table">
+                <thead>
+                  <tr class="headings">
+                    <th class="column-title">Curso</th>
+                    <th class="column-title">Día</th>
+                    <th class="column-title">Hora Inicio</th>
+                    <th class="column-title">Hora Fin</th>
+                    <th class="column-title">Duración</th>
+                    <th class="column-title no-link last">Acciones</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for horario in horarios %}
+                  <tr class="even pointer">
+                    <td>{{ horario.curso.nombre }} - {{ horario.curso.nivel }}</td>
+                    <td>
+                      <span class="badge badge-primary">{{ horario.get_dia_display }}</span>
+                    </td>
+                    <td>{{ horario.hora_inicio|time:"H:i" }}</td>
+                    <td>{{ horario.hora_fin|time:"H:i" }}</td>
+                    <td>
+                      {% with duracion=horario.hora_fin|timeuntil:horario.hora_inicio %}
+                        {{ duracion }}
+                      {% endwith %}
+                    </td>
+                    <td class="last">
+                      <form method="post" style="display: inline;" 
+                            onsubmit="return confirm('¿Seguro que deseas eliminar este horario?');">
+                        {% csrf_token %}
+                        <input type="hidden" name="action" value="eliminar_horario">
+                        <input type="hidden" name="horario_id" value="{{ horario.id }}">
+                        <button type="submit" class="btn btn-xs btn-danger">
+                          <i class="fa fa-trash"></i> Eliminar
+                        </button>
+                      </form>
+                    </td>
+                  </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+            {% else %}
+            <div class="alert alert-info">
+              <i class="fa fa-info-circle"></i>
+              Esta asignatura no tiene horarios programados.
+            </div>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Resumen de Horarios por Curso -->
+    {% if horarios %}
+    <div class="row">
+      <div class="col-md-12">
+        <div class="x_panel">
+          <div class="x_title">
+            <h2>Resumen por Curso</h2>
+            <div class="clearfix"></div>
+          </div>
+          <div class="x_content">
+            <div class="row">
+              {% regroup horarios by curso as horarios_por_curso %}
+              {% for curso_group in horarios_por_curso %}
+              <div class="col-md-6 col-lg-4">
+                <div class="pricing">
+                  <div class="title">
+                    <h2>{{ curso_group.grouper.nombre }}</h2>
+                    <h1><span class="currency">{{ curso_group.grouper.nivel }}</span></h1>
+                  </div>
+                  <div class="pricing-content">
+                    <ul>
+                      {% for horario in curso_group.list %}
+                      <li>
+                        <strong>{{ horario.get_dia_display }}:</strong> 
+                        {{ horario.hora_inicio|time:"H:i" }} - {{ horario.hora_fin|time:"H:i" }}
+                      </li>
+                      {% endfor %}
+                    </ul>
+                  </div>
+                </div>
+              </div>
+              {% endfor %}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    {% endif %}
+  </div>
+</div>
+
+<style>
+.badge-primary {
+    background-color: #26B99A;
+}
+
+.pricing {
+    background: #fff;
+    border-radius: 5px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.24);
+    margin-bottom: 20px;
+    text-align: center;
+}
+
+.pricing .title {
+    background: #26B99A;
+    color: white;
+    padding: 20px;
+    border-radius: 5px 5px 0 0;
+}
+
+.pricing .title h2 {
+    color: white;
+    margin: 0;
+    font-size: 18px;
+}
+
+.pricing .title h1 {
+    color: white;
+    margin: 10px 0 0;
+    font-size: 16px;
+}
+
+.pricing-content {
+    padding: 20px;
+}
+
+.pricing-content ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.pricing-content ul li {
+    padding: 8px 0;
+    border-bottom: 1px solid #eee;
+}
+
+.pricing-content ul li:last-child {
+    border-bottom: none;
+}
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Validar que hora_fin sea mayor que hora_inicio
+    const horaInicio = document.getElementById('hora_inicio');
+    const horaFin = document.getElementById('hora_fin');
+    
+    function validarHoras() {
+        if (horaInicio.value && horaFin.value) {
+            if (horaInicio.value >= horaFin.value) {
+                horaFin.setCustomValidity('La hora de fin debe ser mayor que la hora de inicio');
+            } else {
+                horaFin.setCustomValidity('');
+            }
+        }
+    }
+    
+    if (horaInicio && horaFin) {
+        horaInicio.addEventListener('change', validarHoras);
+        horaFin.addEventListener('change', validarHoras);
+    }
+});
+</script>
+{% endblock %}

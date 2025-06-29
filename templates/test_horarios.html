@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Horarios</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body>
+    <div class="container mt-5">
+        <h1 class="mb-4">Sistema de Horarios - Test</h1>
+        
+        <div class="alert alert-info">
+            <h4>Estado del Sistema</h4>
+            <p><strong>Cursos disponibles:</strong> {{ cursos_info|length|default:"0" }}</p>
+            <p><strong>Total horarios:</strong> {{ total_horarios|default:"0" }}</p>
+            <p><strong>Año actual:</strong> {{ anio_actual|default:"2024" }}</p>
+        </div>
+        
+        <div class="row">
+            <div class="col-md-12">
+                <h3>Cursos Disponibles</h3>
+                <div class="row">
+                    {% for curso_info in cursos_info %}
+                    <div class="col-md-4 mb-3">
+                        <div class="card">
+                            <div class="card-body">
+                                <h5 class="card-title">{{ curso_info.curso.nombre }}</h5>
+                                <p class="card-text">
+                                    <small class="text-muted">Nivel: {{ curso_info.curso.nivel }}</small><br>
+                                    <strong>Horarios:</strong> {{ curso_info.total_horarios }}<br>
+                                    <strong>Estudiantes:</strong> {{ curso_info.total_estudiantes }}
+                                </p>
+                                <a href="{% url 'gestionar_horarios' curso_info.curso.id %}" class="btn btn-primary btn-sm">
+                                    Gestionar Horarios
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                    {% empty %}
+                    <div class="col-12">
+                        <div class="alert alert-warning">
+                            No hay cursos disponibles en el sistema.
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
