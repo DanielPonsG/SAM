@@ -10,6 +10,7 @@
           {% for message in messages %}
             <div class="alert alert-{{ message.tags|default:'info' }} alert-dismissible fade show" role="alert">
               {{ message }}
+              <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
             </div>
           {% endfor %}
         </div>
@@ -17,15 +18,13 @@
     {% endif %}
 
     <!-- Filtros -->
-    <div class="card shadow-sm mb-4">
-      <div class="card-header bg-light">
-        <h5 class="mb-0">
-          <i class="fas fa-filter me-2"></i>Filtros de Búsqueda
-        </h5>
+    <div class="card mb-4">
+      <div class="card-header">
+        <h5 class="mb-0"><i class="fas fa-filter me-2"></i>Filtros</h5>
       </div>
       <div class="card-body">
         <form method="get" class="row g-3">
-          <div class="col-md-4">
+          <div class="col-md-5">
             <label for="curso_id" class="form-label">Curso:</label>
             <select name="curso_id" id="curso_id" class="form-select" onchange="this.form.submit()">
               <option value="">-- Selecciona un curso --</option>
@@ -36,7 +35,7 @@
               {% endfor %}
             </select>
           </div>
-          <div class="col-md-4">
+          <div class="col-md-5">
             <label for="asignatura_id" class="form-label">Asignatura:</label>
             <select name="asignatura_id" id="asignatura_id" class="form-select" onchange="this.form.submit()">
               <option value="">-- Todas las asignaturas --</option>
@@ -50,41 +49,39 @@
               <input type="hidden" name="curso_id" value="{{ curso_seleccionado.id }}">
             {% endif %}
           </div>
+          {% if promedio_asignatura %}
+          <div class="col-md-2">
+            <label class="form-label">Promedio General:</label>
+            <div class="badge fs-6 {% if promedio_asignatura >= 6.0 %}bg-success{% elif promedio_asignatura >= 4.0 %}bg-warning{% else %}bg-danger{% endif %}">
+              {{ promedio_asignatura }}
+            </div>
+          </div>
+          {% endif %}
         </form>
       </div>
     </div>
 
-    <!-- Promedio General de la Asignatura -->
-    {% if promedio_asignatura %}
-    <div class="card shadow-sm mb-4">
-      <div class="card-header bg-light">
+    <!-- Tabla de Notas -->
+    <div class="card">
+      <div class="card-header">
         <h5 class="mb-0">
-          <i class="fas fa-chart-line me-2"></i>Promedio General de la Asignatura
-        </h5>
-      </div>
-      <div class="card-body">
-        <div class="d-flex align-items-center">
-          <span class="badge fs-6 {% if promedio_asignatura >= 6.0 %}bg-success{% elif promedio_asignatura >= 4.0 %}bg-warning{% else %}bg-danger{% endif %}">
-            {{ promedio_asignatura }}
-          </span>
-          <span class="ms-3 text-muted">(Escala 1.0 - 7.0)</span>
-        </div>
-      </div>
-    </div>
-    {% endif %}
-
-    <!-- Tabla de Notas por Estudiante y Evaluación -->
-    <div class="card border shadow-sm">
-      <div class="card-header bg-light border-bottom">
-        <h5 class="mb-0 text-dark">
           <i class="fas fa-list me-2"></i>
-          Notas por Estudiante y Evaluación
+          {% if asignatura_seleccionada %}
+            Notas de {{ asignatura_seleccionada.nombre }}
+          {% elif curso_seleccionado %}
+            Notas del Curso {{ curso_seleccionado.get_nivel_display }}{{ curso_seleccionado.paralelo }} - Todas las Asignaturas
+          {% else %}
+            Notas por Estudiante
+          {% endif %}
         </h5>
+        {% if curso_seleccionado and not asignatura_seleccionada %}
+          <small class="text-muted">Vista consolidada de todas las asignaturas del curso</small>
+        {% endif %}
       </div>
       <div class="card-body p-0">
         {% if estudiantes_tabla and evaluaciones %}
         <div class="table-responsive">
-          <table class="table table-hover mb-0 align-middle notas-table">
+          <table class="table table-hover mb-0 notas-table">
             <thead class="table-light">
               <tr>
                 <th>Estudiante</th>
@@ -98,33 +95,33 @@
               {% for estudiante in estudiantes_tabla %}
                 <tr>
                   <td class="fw-bold">{{ estudiante.get_nombre_completo }}</td>
-                  {% for nota in notas_por_estudiante|get_item:estudiante %}
-                    <td class="text-center nota-celda">
-                      {% if nota %}
-                        <div class="nota-container">
-                          <a href="{% url 'editar_nota' nota.id %}" class="nota-btn" title="Editar Nota">
-                            <span class="nota-badge nota-existe">{{ nota.puntaje }}</span>
-                          </a>
-                          <a href="{% url 'eliminar_nota' nota.id %}" class="eliminar-nota-btn" title="Eliminar Nota" onclick="return confirm('¿Seguro que deseas eliminar esta nota?');">
-                            <i class="fas fa-trash-alt"></i>
-                          </a>
-                        </div>
-                      {% else %}
-                        <div class="nota-container">
-                          <a href="{% url 'ingresar_notas' %}?curso_id={{ curso_seleccionado.id }}&asignatura_id={{ asignatura_seleccionada.id }}" class="crear-nota-btn" title="Agregar Nota">
-                            <span class="nota-badge nota-vacia">
-                              <i class="fas fa-plus"></i>
-                            </span>
-                          </a>
-                        </div>
-                      {% endif %}
-                    </td>
-                  {% endfor %}
-                  <td class="text-center promedio-celda">
+                  {% with notas_estudiante=notas_por_estudiante|get_item:estudiante %}
+                    {% for ev in evaluaciones %}
+                      <td class="text-center nota-celda">
+                        {% with nota=notas_estudiante|get_list_item:forloop.counter0 %}
+                          {% if nota %}
+                            <a href="{% url 'editar_nota' nota.id %}" class="nota-btn" title="Editar">
+                              {{ nota.puntaje }}
+                            </a>
+                            <a href="{% url 'eliminar_nota' nota.id %}" class="eliminar-btn" title="Eliminar" onclick="return confirm('¿Eliminar esta nota?');">
+                              ×
+                            </a>
+                          {% else %}
+                            {% if asignatura_seleccionada %}
+                              <a href="{% url 'agregar_nota_individual' estudiante.id asignatura_seleccionada.id ev.nombre %}" class="agregar-btn" title="Agregar nota">
+                                +
+                              </a>
+                            {% else %}
+                              <span class="text-muted">-</span>
+                            {% endif %}
+                          {% endif %}
+                        {% endwith %}
+                      </td>
+                    {% endfor %}
+                  {% endwith %}
+                  <td class="text-center">
                     {% with datos=promedios_estudiantes|get_item:estudiante.id %}
-                      <span class="promedio-badge {% if datos.promedio != '--' %}{% if datos.promedio >= 6.0 %}promedio-excelente{% elif datos.promedio >= 4.0 %}promedio-bueno{% else %}promedio-malo{% endif %}{% endif %}">
-                        {{ datos.promedio }}
-                      </span>
+                      <strong>{{ datos.promedio }}</strong>
                     {% endwith %}
                   </td>
                 </tr>
@@ -134,250 +131,90 @@
         </div>
         {% else %}
           <div class="text-center py-5">
-            <span class="text-muted">No hay notas registradas para este curso/asignatura.</span>
+            <p class="text-muted">No hay notas registradas para este curso/asignatura.</p>
           </div>
         {% endif %}
       </div>
     </div>
-
-<style>
-/* Tabla de notas mejorada */
-.notas-table {
-  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-  border-collapse: separate;
-  border-spacing: 0;
-}
-
-.notas-table th, .notas-table td {
-  vertical-align: middle;
-  text-align: center;
-  padding: 0.8rem 0.4rem;
-  font-size: 1rem;
-  border: 1px solid #e0e0e0;
-}
-
-.notas-table th:first-child,
-.notas-table td:first-child {
-  text-align: left;
-  padding-left: 1rem;
-  font-weight: 600;
-  min-width: 200px;
-}
-
-/* Contenedor de notas */
-.nota-container {
-  position: relative;
-  display: inline-block;
-  min-width: 60px;
-  min-height: 40px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-/* Badges de notas existentes */
-.nota-badge {
-  display: inline-block;
-  border-radius: 8px;
-  padding: 0.5em 1em;
-  font-size: 1.1rem;
-  font-weight: 700;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  border: 2px solid transparent;
-  min-width: 50px;
-  text-align: center;
-}
-
-.nota-existe {
-  background: linear-gradient(135deg, #f8f9ff 0%, #e8f2ff 100%);
-  color: #1565c0;
-  border-color: #bbdefb;
-  box-shadow: 0 2px 4px rgba(21, 101, 192, 0.1);
-}
-
-.nota-existe:hover {
-  background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
-  border-color: #1976d2;
-  color: #0d47a1;
-  transform: translateY(-1px);
-  box-shadow: 0 4px 8px rgba(21, 101, 192, 0.2);
-}
-
-/* Badges para notas vacías */
-.nota-vacia {
-  background: linear-gradient(135deg, #f1f8e9 0%, #dcedc8 100%);
-  color: #558b2f;
-  border-color: #c5e1a5;
-  border-style: dashed;
-  box-shadow: 0 2px 4px rgba(85, 139, 47, 0.1);
-}
-
-.nota-vacia:hover {
-  background: linear-gradient(135deg, #c8e6c9 0%, #a5d6a7 100%);
-  border-color: #4caf50;
-  color: #2e7d32;
-  transform: translateY(-1px);
-  box-shadow: 0 4px 8px rgba(76, 175, 80, 0.2);
-}
-
-.nota-vacia i {
-  font-size: 0.9rem;
-}
-
-/* Enlaces sin decoración */
-.nota-btn, .crear-nota-btn {
-  text-decoration: none;
-  display: inline-block;
-}
-
-.nota-btn:hover, .crear-nota-btn:hover {
-  text-decoration: none;
-}
-
-/* Botón de eliminar mejorado */
-.eliminar-nota-btn {
-  position: absolute;
-  top: -8px;
-  right: -8px;
-  background: #ff5252;
-  color: white;
-  border-radius: 50%;
-  width: 24px;
-  height: 24px;
-  display: none;
-  align-items: center;
-  justify-content: center;
-  font-size: 0.75rem;
-  text-decoration: none;
-  box-shadow: 0 2px 4px rgba(255, 82, 82, 0.3);
-  transition: all 0.2s ease;
-}
-
-.eliminar-nota-btn:hover {
-  background: #d32f2f;
-  transform: scale(1.1);
-  text-decoration: none;
-  color: white;
-}
-
-.nota-container:hover .eliminar-nota-btn {
-  display: flex;
-}
-
-/* Promedio badges con colores */
-.promedio-badge {
-  display: inline-block;
-  border-radius: 8px;
-  padding: 0.5em 1em;
-  font-size: 1.1rem;
-  font-weight: 700;
-  min-width: 50px;
-  text-align: center;
-  border: 2px solid transparent;
-}
-
-.promedio-excelente {
-  background: linear-gradient(135deg, #e8f5e8 0%, #c8e6c9 100%);
-  color: #2e7d32;
-  border-color: #81c784;
-}
-
-.promedio-bueno {
-  background: linear-gradient(135deg, #fff8e1 0%, #ffecb3 100%);
-  color: #ef6c00;
-  border-color: #ffb74d;
-}
-
-.promedio-malo {
-  background: linear-gradient(135deg, #ffebee 0%, #ffcdd2 100%);
-  color: #c62828;
-  border-color: #ef5350;
-}
-
-/* Header de tabla mejorado */
-.table thead th {
-  background: linear-gradient(135deg, #1565c0 0%, #1976d2 100%);
-  color: white;
-  font-weight: 600;
-  font-size: 1rem;
-  border: none;
-  box-shadow: 0 2px 4px rgba(21, 101, 192, 0.2);
-  position: sticky;
-  top: 0;
-  z-index: 10;
-}
-
-/* Filas alternadas */
-.notas-table tbody tr:nth-child(even) {
-  background-color: #fafafa;
-}
-
-.notas-table tbody tr:hover {
-  background-color: #f0f8ff;
-}
-
-/* Celda de promedio */
-.promedio-celda {
-  background-color: rgba(21, 101, 192, 0.05);
-  font-weight: 600;
-}
-
-/* Responsivo */
-@media (max-width: 768px) {
-  .notas-table th, .notas-table td {
-    padding: 0.5rem 0.25rem;
-    font-size: 0.9rem;
-  }
-  
-  .nota-badge, .promedio-badge {
-    padding: 0.4em 0.8em;
-    font-size: 1rem;
-    min-width: 40px;
-  }
-  
-  .notas-table th:first-child,
-  .notas-table td:first-child {
-    min-width: 150px;
-    font-size: 0.85rem;
-  }
-}
-
-/* Animaciones */
-@keyframes aparecer {
-  from {
-    opacity: 0;
-    transform: scale(0.8);
-  }
-  to {
-    opacity: 1;
-    transform: scale(1);
-  }
-}
-
-.nota-badge, .promedio-badge {
-  animation: aparecer 0.3s ease-out;
-}
-
-/* Tooltips mejorados */
-.nota-btn[title]:hover::after,
-.crear-nota-btn[title]:hover::after,
-.eliminar-nota-btn[title]:hover::after {
-  content: attr(title);
-  position: absolute;
-  bottom: 100%;
-  left: 50%;
-  transform: translateX(-50%);
-  background: #333;
-  color: white;
-  padding: 0.5rem;
-  border-radius: 4px;
-  font-size: 0.8rem;
-  white-space: nowrap;
-  z-index: 1000;
-  margin-bottom: 5px;
-}
-</style>
   </div>
 </div>
+
+<style>
+.notas-table th, .notas-table td {
+  padding: 0.6rem 0.4rem;
+  vertical-align: middle;
+}
+.nota-celda {
+  position: relative;
+}
+.nota-btn {
+  display: inline-block;
+  background: #f8f9fa;
+  border: 1px solid #dee2e6;
+  border-radius: 4px;
+  padding: 0.25rem 0.5rem;
+  text-decoration: none;
+  color: #212529;
+  font-weight: 500;
+  min-width: 45px;
+  text-align: center;
+  transition: all 0.2s;
+}
+.nota-btn:hover {
+  background: #e9ecef;
+  border-color: #0d6efd;
+  color: #0d6efd;
+}
+.agregar-btn {
+  display: inline-block;
+  background: #f8f9fa;
+  border: 1px dashed #28a745;
+  border-radius: 4px;
+  padding: 0.25rem 0.5rem;
+  text-decoration: none;
+  color: #28a745;
+  font-weight: 500;
+  min-width: 45px;
+  text-align: center;
+  transition: all 0.2s;
+  font-size: 18px;
+  line-height: 1;
+}
+.agregar-btn:hover {
+  background: #d4edda;
+  border-color: #28a745;
+  border-style: solid;
+  color: #155724;
+}
+.eliminar-btn {
+  display: none;
+  position: absolute;
+  right: 5px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: #dc3545;
+  color: white;
+  border: none;
+  border-radius: 50%;
+  width: 20px;
+  height: 20px;
+  text-align: center;
+  line-height: 18px;
+  font-size: 12px;
+  text-decoration: none;
+  cursor: pointer;
+}
+.nota-celda:hover .eliminar-btn {
+  display: block;
+}
+.eliminar-btn:hover {
+  background: #c82333;
+  color: white;
+}
+.table thead th {
+  background-color: #f8f9fa;
+  border-bottom: 2px solid #dee2e6;
+  font-weight: 600;
+}
+</style>
 {% endblock %}

@@ -1369,33 +1369,91 @@ def ver_notas_curso(request):
             if user_type == 'profesor':
                 profesor = Profesor.objects.get(user=request.user)
                 inscripciones = inscripciones.filter(grupo__profesor=profesor)
-            estudiantes_curso_asignatura = inscripciones.order_by('estudiante__primer_nombre', 'estudiante__apellido_paterno')
+            
+            # Obtener estudiantes únicos (evitar duplicados)
+            estudiantes_ids = set(inscripciones.values_list('estudiante_id', flat=True))
+            estudiantes_curso_asignatura = estudiantes_curso.filter(id__in=estudiantes_ids).order_by('primer_nombre', 'apellido_paterno')
+            
             notas = Calificacion.objects.filter(inscripcion__in=inscripciones).select_related('inscripcion', 'inscripcion__estudiante')
-            # Construir lista de evaluaciones únicas (por nombre y fecha)
+            
+            # Construir lista de evaluaciones únicas (por nombre solamente, evitando duplicados por fecha)
+            evaluaciones_nombres = set()
             for nota in notas:
-                key = (nota.nombre_evaluacion, nota.fecha_evaluacion)
-                if key not in evaluaciones_dict:
-                    evaluaciones_dict[key] = {
-                        'id': nota.id,
-                        'nombre': nota.nombre_evaluacion,
-                        'fecha': nota.fecha_evaluacion
-                    }
-            evaluaciones = list(evaluaciones_dict.values())
+                evaluaciones_nombres.add(nota.nombre_evaluacion)
+            evaluaciones = [{'nombre': nombre} for nombre in sorted(evaluaciones_nombres)]
+            
             # Agrupar notas por estudiante y por evaluación
-            for insc in estudiantes_curso_asignatura:
-                notas_est = [None]*len(evaluaciones)
-                notas_est_dict = { (n.nombre_evaluacion, n.fecha_evaluacion): n for n in notas if n.inscripcion.estudiante.id == insc.estudiante.id }
+            for estudiante in estudiantes_curso_asignatura:
+                notas_est = [None] * len(evaluaciones)
+                # Obtener todas las notas del estudiante para esta asignatura
+                notas_estudiante = notas.filter(inscripcion__estudiante=estudiante)
+                
                 for idx, ev in enumerate(evaluaciones):
-                    nota = notas_est_dict.get((ev['nombre'], ev['fecha']))
+                    # Obtener la nota más reciente para esta evaluación
+                    nota = notas_estudiante.filter(nombre_evaluacion=ev['nombre']).order_by('-fecha_evaluacion').first()
                     notas_est[idx] = nota
-                notas_por_estudiante[insc.estudiante] = notas_est
+                notas_por_estudiante[estudiante] = notas_est
         except Asignatura.DoesNotExist:
             evaluaciones = []
+            estudiantes_curso_asignatura = []
+    elif curso_seleccionado:
+        # Mostrar notas de todas las asignaturas del curso cuando no se selecciona una asignatura específica
+        estudiantes_curso = curso_seleccionado.estudiantes.all()
+        asignaturas_curso = curso_seleccionado.asignaturas.all()
+        
+        # Obtener todas las inscripciones del curso para todas las asignaturas
+        inscripciones = Inscripcion.objects.filter(
+            estudiante__in=estudiantes_curso,
+            grupo__asignatura__in=asignaturas_curso
+        ).select_related('estudiante', 'grupo', 'grupo__asignatura')
+        
+        if user_type == 'profesor':
+            try:
+                profesor = Profesor.objects.get(user=request.user)
+                inscripciones = inscripciones.filter(grupo__profesor=profesor)
+            except Profesor.DoesNotExist:
+                pass
+        
+        # Obtener todas las notas
+        notas = Calificacion.objects.filter(inscripcion__in=inscripciones).select_related(
+            'inscripcion', 'inscripcion__estudiante', 'inscripcion__grupo__asignatura'
+        )
+        
+        # Construir evaluaciones únicas con formato "Asignatura - Evaluación"
+        evaluaciones_set = set()
+        for nota in notas:
+            eval_name = f"{nota.inscripcion.grupo.asignatura.nombre} - {nota.nombre_evaluacion}"
+            evaluaciones_set.add(eval_name)
+        
+        evaluaciones = [{'nombre': nombre} for nombre in sorted(evaluaciones_set)]
+        
+        # Obtener estudiantes únicos del curso
+        estudiantes_curso_asignatura = estudiantes_curso.order_by('primer_nombre', 'apellido_paterno')
+        
+        # Agrupar notas por estudiante y por evaluación
+        for estudiante in estudiantes_curso_asignatura:
+            notas_est = [None] * len(evaluaciones)
+            # Obtener todas las notas del estudiante para este curso
+            notas_estudiante = notas.filter(inscripcion__estudiante=estudiante)
+            
+            for idx, ev in enumerate(evaluaciones):
+                # Extraer asignatura y evaluación del nombre compuesto
+                partes = ev['nombre'].split(' - ', 1)
+                if len(partes) == 2:
+                    asignatura_nombre, evaluacion_nombre = partes
+                    # Buscar la nota más reciente para esta combinación
+                    nota = notas_estudiante.filter(
+                        inscripcion__grupo__asignatura__nombre=asignatura_nombre,
+                        nombre_evaluacion=evaluacion_nombre
+                    ).order_by('-fecha_evaluacion').first()
+                    notas_est[idx] = nota
+            notas_por_estudiante[estudiante] = notas_est
     else:
         evaluaciones = []
-        # Mostrar todos los estudiantes del curso aunque no tengan notas
-        if curso_seleccionado:
-            estudiantes_curso_asignatura = curso_seleccionado.estudiantes.all().order_by('primer_nombre', 'apellido_paterno')
+        estudiantes_curso_asignatura = []
+        # Asegurar que notas_por_estudiante siga siendo un diccionario
+        if not isinstance(notas_por_estudiante, dict):
+            notas_por_estudiante = {}
 
     context = {
         'cursos_disponibles': cursos_disponibles,
@@ -1419,16 +1477,8 @@ def ver_notas_curso(request):
         asignaturas_curso = []
     context['asignaturas_curso'] = asignaturas_curso
 
-    # Unificar lista de estudiantes para la tabla (si hay inscripciones, usar inscripcion.estudiante, si no, usar el estudiante)
-    estudiantes_tabla = []
-    if estudiantes_curso_asignatura:
-        primer = estudiantes_curso_asignatura[0]
-        if hasattr(primer, 'estudiante'):
-            # Es queryset de Inscripcion
-            estudiantes_tabla = [insc.estudiante for insc in estudiantes_curso_asignatura]
-        else:
-            # Es queryset de Estudiante
-            estudiantes_tabla = list(estudiantes_curso_asignatura)
+    # Unificar lista de estudiantes para la tabla (ahora siempre son objetos Estudiante)
+    estudiantes_tabla = list(estudiantes_curso_asignatura)
     context['estudiantes_tabla'] = estudiantes_tabla
 
     # Calcular promedios por estudiante y promedio de la asignatura
@@ -1436,8 +1486,18 @@ def ver_notas_curso(request):
     suma_total = 0
     total_notas_asignatura = 0
     for estudiante in estudiantes_tabla:
-        notas_est = notas_por_estudiante.get(estudiante, [])
-        notas_validas = [n.puntaje for n in notas_est if n is not None]
+        # Asegurar que notas_por_estudiante tenga la estructura correcta
+        if estudiante in notas_por_estudiante:
+            notas_est = notas_por_estudiante[estudiante]
+        else:
+            notas_est = []
+        
+        # Si notas_est es una lista de objetos nota, extraer puntajes
+        if isinstance(notas_est, list):
+            notas_validas = [n.puntaje for n in notas_est if n is not None and hasattr(n, 'puntaje')]
+        else:
+            notas_validas = []
+            
         total_notas = len(notas_validas)
         promedio = round(sum(notas_validas) / total_notas, 2) if total_notas > 0 else None
         estado = 'Aprobado' if promedio is not None and promedio >= 4.0 else 'Reprobado'
@@ -1950,48 +2010,89 @@ def eliminar_nota(request, nota_id):
     }
     return render(request, 'eliminar_nota.html', context)
 
-
-
 @login_required
-def editar_asistencia_alumno(request, asistencia_id):
-    """Vista para editar asistencia de alumno"""
-    context = {'user': request.user, 'asistencia_id': asistencia_id}
-    return render(request, 'editar_asistencia_alumno.html', context)
-
-@login_required
-def eliminar_asistencia_alumno(request, asistencia_id):
-    """Vista para eliminar asistencia de alumno"""
-    context = {'user': request.user, 'asistencia_id': asistencia_id}
-    return render(request, 'eliminar_asistencia_alumno.html', context)
-
-@login_required
-def editar_asistencia_profesor(request, asistencia_id):
-    """Vista para editar asistencia de profesor"""
-    context = {'user': request.user, 'asistencia_id': asistencia_id}
-    return render(request, 'editar_asistencia_profesor.html', context)
-
-@login_required
-def eliminar_asistencia_profesor(request, asistencia_id):
-    """Vista para eliminar asistencia de profesor"""
-    context = {'user': request.user, 'asistencia_id': asistencia_id}
-    return render(request, 'eliminar_asistencia_profesor.html', context)
-
-@login_required
-def agregar_horario(request):
-    """Vista para agregar horario (stub temporal para evitar error de importación)"""
-    return render(request, 'agregar_horario.html', {'user': request.user})
-
-@login_required
-def editar_horario(request, horario_id=None):
-    """Vista para editar horario (stub temporal para evitar error de importación)"""
-    return render(request, 'editar_horario.html', {'user': request.user, 'horario_id': horario_id})
-
-@login_required
-def eliminar_horario(request, horario_id=None):
-    """Vista para eliminar horario (stub temporal para evitar error de importación)"""
-    return render(request, 'eliminar_horario.html', {'user': request.user, 'horario_id': horario_id})
-
-@login_required
-def prueba_cursos_horarios(request):
-    """Vista de prueba para cursos y horarios (stub temporal para evitar error de importación)"""
-    return render(request, 'prueba_cursos_horarios.html', {'user': request.user})
+def agregar_nota_individual(request, estudiante_id, asignatura_id, evaluacion_nombre):
+    """Vista para agregar una nota individual a un estudiante específico"""
+    from .forms import CalificacionForm
+    from django.shortcuts import get_object_or_404
+    from urllib.parse import unquote
+    
+    # Obtener el estudiante y asignatura
+    estudiante = get_object_or_404(Estudiante, id=estudiante_id)
+    asignatura = get_object_or_404(Asignatura, id=asignatura_id)
+    evaluacion_nombre = unquote(evaluacion_nombre)
+    
+    # Verificar permisos del usuario
+    user_type_obj = getattr(request.user, 'perfil', None)
+    user_type = user_type_obj.tipo_usuario if user_type_obj else None
+    
+    # Solo admin, director o profesor responsable puede agregar notas
+    if user_type not in ['director', 'administrador']:
+        if user_type == 'profesor':
+            try:
+                profesor = request.user.profesor
+                if not (asignatura.profesores_responsables.filter(id=profesor.id).exists() or 
+                       asignatura.profesor_responsable == profesor):
+                    messages.error(request, 'No tienes permisos para agregar notas a esta asignatura.')
+                    return redirect('ver_notas_curso')
+            except:
+                messages.error(request, 'No tienes permisos para agregar notas.')
+                return redirect('ver_notas_curso')
+        else:
+            messages.error(request, 'No tienes permisos para agregar notas.')
+            return redirect('ver_notas_curso')
+    
+    # Obtener o crear inscripción del estudiante
+    from django.utils import timezone
+    anio_actual = timezone.now().year
+    periodo_actual = PeriodoAcademico.objects.filter(activo=True).first()
+    if not periodo_actual:
+        from datetime import date
+        periodo_actual = PeriodoAcademico.objects.create(
+            nombre=f"Año Lectivo {anio_actual}",
+            fecha_inicio=date(anio_actual, 3, 1),
+            fecha_fin=date(anio_actual, 12, 15),
+            activo=True
+        )
+    
+    # Obtener o crear grupo para esta asignatura
+    profesor_asignatura = asignatura.profesores_responsables.first() or asignatura.profesor_responsable
+    grupo, created = Grupo.objects.get_or_create(
+        asignatura=asignatura,
+        periodo_academico=periodo_actual,
+        profesor=profesor_asignatura,
+        defaults={'capacidad_maxima': 50}
+    )
+    
+    # Obtener o crear inscripción
+    inscripcion, created = Inscripcion.objects.get_or_create(
+        estudiante=estudiante,
+        grupo=grupo
+    )
+    
+    if request.method == 'POST':
+        form = CalificacionForm(request.POST)
+        if form.is_valid():
+            calificacion = form.save(commit=False)
+            calificacion.inscripcion = inscripcion
+            calificacion.nombre_evaluacion = evaluacion_nombre
+            calificacion.fecha_evaluacion = timezone.now().date()
+            calificacion.save()
+            messages.success(request, f'Nota agregada exitosamente para {estudiante.get_nombre_completo()}.')
+            return redirect('ver_notas_curso')
+        else:
+            messages.error(request, 'Por favor corrige los errores del formulario.')
+    else:
+        # Pre-llenar el formulario con el nombre de la evaluación
+        form = CalificacionForm(initial={'nombre_evaluacion': evaluacion_nombre})
+    
+    context = {
+        'user': request.user,
+        'estudiante': estudiante,
+        'asignatura': asignatura,
+        'evaluacion_nombre': evaluacion_nombre,
+        'form': form,
+        'titulo': 'Agregar Nota',
+        'es_nueva': True
+    }
+    return render(request, 'editar_nota.html', context)

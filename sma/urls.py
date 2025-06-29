@@ -29,10 +29,8 @@ from smapp.views import (
     # Funciones adicionales que pueden estar referenciadas
     editar_evento, eliminar_evento, agregar_curso, editar_curso, eliminar_curso,
     agregar_asignatura, editar_asignatura, eliminar_asignatura, agregar_asignatura_completa,
-    ver_horario_curso, api_horarios_cursos, editar_nota, eliminar_nota,
-    ver_asistencia_profesor, editar_asistencia_alumno, editar_asistencia_profesor,
-    agregar_horario, editar_horario, eliminar_horario,
-    prueba_cursos_horarios  # Agregar vista de prueba
+    ver_horario_curso, api_horarios_cursos, editar_nota, eliminar_nota, agregar_nota_individual,
+    ver_asistencia_profesor
 )
 
 # Importar las vistas temporales
@@ -74,7 +72,6 @@ urlpatterns = [
     # Sistema de horarios
     path('horarios/', seleccionar_curso_horarios, name='seleccionar_curso_horarios'),
     path('cursos/<int:curso_id>/horarios/', gestionar_horarios, name='gestionar_horarios'),
-    path('prueba-cursos/', prueba_cursos_horarios, name='prueba_cursos_horarios'),  # URL de prueba
 
     # Gestión de Asignaturas
     path('asignaturas/', listar_asignaturas, name='listar_asignaturas'),
@@ -89,6 +86,7 @@ urlpatterns = [
     path('notas/asignar-asignaturas-curso/', asignar_asignaturas_curso, name='asignar_asignaturas_curso'),
     path('notas/editar/<int:nota_id>/', editar_nota, name='editar_nota'),
     path('notas/eliminar/<int:nota_id>/', eliminar_nota, name='eliminar_nota'),
+    path('notas/agregar/<int:estudiante_id>/<int:asignatura_id>/<str:evaluacion_nombre>/', agregar_nota_individual, name='agregar_nota_individual'),
     
     # Vistas de usuario
     path('mis-horarios/', mis_horarios, name='mis_horarios'),
@@ -97,10 +95,8 @@ urlpatterns = [
     # Gestión de Asistencia
     path('asistencia/alumno/registrar/', registrar_asistencia_alumno, name='registrar_asistencia_alumno'),
     path('asistencia/alumno/ver/', ver_asistencia_alumno, name='ver_asistencia_alumno'),
-    path('asistencia/alumno/editar/<int:asistencia_id>/', editar_asistencia_alumno, name='editar_asistencia_alumno'),
     path('asistencia/profesor/registrar/', registrar_asistencia_profesor, name='registrar_asistencia_profesor'),
     path('asistencia/profesor/ver/', ver_asistencia_profesor, name='ver_asistencia_profesor'),
-    path('asistencia/profesor/editar/<int:asistencia_id>/', editar_asistencia_profesor, name='editar_asistencia_profesor'),
     
     # APIs y AJAX
     path('api/horarios_cursos/', api_horarios_cursos, name='api_horarios_cursos'),
