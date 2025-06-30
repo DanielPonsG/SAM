@@ -34,7 +34,10 @@ from smapp.views import (
     # Nuevas vistas AJAX para gestión de asignaturas
     gestionar_asignaturas_curso_ajax, obtener_asignaturas_curso_ajax,
     # Nueva vista para editar asistencia
-    editar_asistencia_alumno
+    editar_asistencia_alumno,
+    # Vistas del libro de anotaciones
+    libro_anotaciones, crear_anotacion, editar_anotacion, eliminar_anotacion,
+    detalle_comportamiento_estudiante, ajax_obtener_estudiantes_curso, ajax_obtener_estudiantes_filtro
 )
 
 # Importar las vistas temporales
@@ -115,4 +118,15 @@ urlpatterns = [
     # Gestión de asignaturas por curso (AJAX)
     path('ajax/gestionar-asignaturas-curso/', gestionar_asignaturas_curso_ajax, name='gestionar_asignaturas_curso_ajax'),
     path('ajax/obtener-asignaturas-curso/<int:curso_id>/', obtener_asignaturas_curso_ajax, name='obtener_asignaturas_curso_ajax'),
+    
+    # Libro de Anotaciones
+    path('anotaciones/', libro_anotaciones, name='libro_anotaciones'),
+    path('anotaciones/crear/', crear_anotacion, name='crear_anotacion'),
+    path('anotaciones/editar/<int:anotacion_id>/', editar_anotacion, name='editar_anotacion'),
+    path('anotaciones/eliminar/<int:anotacion_id>/', eliminar_anotacion, name='eliminar_anotacion'),
+    path('anotaciones/estudiante/<int:estudiante_id>/', detalle_comportamiento_estudiante, name='detalle_comportamiento_estudiante'),
+    
+    # AJAX para anotaciones
+    path('ajax/obtener-estudiantes-curso/', ajax_obtener_estudiantes_curso, name='ajax_obtener_estudiantes_curso'),
+    path('ajax/obtener-estudiantes-filtro/', ajax_obtener_estudiantes_filtro, name='ajax_obtener_estudiantes_filtro'),
 ]

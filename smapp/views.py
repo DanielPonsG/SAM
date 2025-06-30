@@ -1,7 +1,7 @@
 from django.shortcuts import render, get_object_or_404, redirect
 from django.urls import reverse
-from .models import Estudiante, Profesor, EventoCalendario, Curso, HorarioCurso, Asignatura, PeriodoAcademico
-from .forms import EstudianteForm, ProfesorForm, EventoCalendarioForm, CursoForm, HorarioCursoForm, AsignaturaForm, AsignaturaCompletaForm, SeleccionCursoAlumnoForm, CalificacionForm, AsistenciaAlumnoForm, AsistenciaProfesorForm, RegistroMasivoAsistenciaForm
+from .models import Estudiante, Profesor, EventoCalendario, Curso, HorarioCurso, Asignatura, PeriodoAcademico, Anotacion
+from .forms import EstudianteForm, ProfesorForm, EventoCalendarioForm, CursoForm, HorarioCursoForm, AsignaturaForm, AsignaturaCompletaForm, SeleccionCursoAlumnoForm, CalificacionForm, AsistenciaAlumnoForm, AsistenciaProfesorForm, RegistroMasivoAsistenciaForm, AnotacionForm, FiltroAnotacionesForm
 from django.db import models
 from django.db.models import Q, Avg
 from django.contrib.auth import authenticate, login, logout
@@ -1464,7 +1464,6 @@ def ver_notas_curso(request):
         'curso_seleccionado': curso_seleccionado,
         'asignaturas_disponibles': asignaturas_disponibles,
         'asignatura_seleccionada': asignatura_seleccionada,
-        'todas_las_asignaturas': todas_las_asignaturas,
         'estudiantes_curso_asignatura': estudiantes_curso_asignatura,
         'notas': notas,
         'notas_por_estudiante': notas_por_estudiante,
@@ -2649,3 +2648,485 @@ def editar_asistencia_alumno(request, asistencia_id):
     }
     
     return render(request, 'editar_asistencia_alumno.html', context)
+
+@login_required
+def libro_anotaciones(request):
+    """Vista principal del libro de anotaciones con permisos diferenciados"""
+    from .models import calcular_puntaje_comportamiento
+    from django.db.models import Count, Q
+    from django.core.paginator import Paginator
+    
+    # Determinar tipo de usuario y permisos
+    user_type = None
+    profesor_actual = None
+    estudiante_actual = None
+    
+    if hasattr(request.user, 'perfil'):
+        user_type = request.user.perfil.tipo_usuario
+        
+        if user_type == 'alumno':
+            # Estudiante solo ve sus anotaciones
+            try:
+                estudiante_actual = request.user.estudiante
+                anotaciones_base = Anotacion.objects.filter(estudiante=estudiante_actual)
+                cursos_disponibles = estudiante_actual.cursos.filter(anio=timezone.now().year)
+                puede_crear = False
+            except:
+                messages.error(request, 'Error al obtener información del estudiante.')
+                return render(request, 'libro_anotaciones.html', {'error': True})
+                
+        elif user_type == 'profesor':
+            # Profesor ve anotaciones de sus cursos y puede crear
+            try:
+                profesor_actual = request.user.profesor
+                cursos_disponibles = profesor_actual.get_cursos_asignados()
+                
+                # Obtener estudiantes de sus cursos
+                estudiantes_ids = set()
+                for curso in cursos_disponibles:
+                    estudiantes_ids.update(curso.estudiantes.values_list('id', flat=True))
+                
+                anotaciones_base = Anotacion.objects.filter(estudiante_id__in=estudiantes_ids)
+                puede_crear = True
+            except:
+                messages.error(request, 'Error al obtener información del profesor.')
+                return render(request, 'libro_anotaciones.html', {'error': True})
+                
+        elif user_type in ['director', 'administrador']:
+            # Director/Admin ve todas las anotaciones
+            anotaciones_base = Anotacion.objects.all()
+            cursos_disponibles = Curso.objects.filter(anio=timezone.now().year)
+            puede_crear = True
+        else:
+            messages.error(request, 'No tienes permisos para acceder al libro de anotaciones.')
+            return render(request, 'libro_anotaciones.html', {'error': True})
+    else:
+        messages.error(request, 'Usuario sin perfil definido.')
+        return render(request, 'libro_anotaciones.html', {'error': True})
+    
+    # Procesar filtros
+    filtro_form = FiltroAnotacionesForm(request.GET, profesor=profesor_actual)
+    anotaciones = anotaciones_base.select_related(
+        'estudiante', 'curso', 'asignatura', 'profesor_autor'
+    ).order_by('-fecha_creacion')
+    
+    # Aplicar filtros
+    if filtro_form.is_valid():
+        if filtro_form.cleaned_data.get('curso'):
+            anotaciones = anotaciones.filter(curso=filtro_form.cleaned_data['curso'])
+        
+        if filtro_form.cleaned_data.get('estudiante'):
+            anotaciones = anotaciones.filter(estudiante=filtro_form.cleaned_data['estudiante'])
+        
+        if filtro_form.cleaned_data.get('tipo'):
+            anotaciones = anotaciones.filter(tipo=filtro_form.cleaned_data['tipo'])
+        
+        if filtro_form.cleaned_data.get('categoria'):
+            anotaciones = anotaciones.filter(categoria=filtro_form.cleaned_data['categoria'])
+        
+        if filtro_form.cleaned_data.get('fecha_desde'):
+            anotaciones = anotaciones.filter(fecha_creacion__gte=filtro_form.cleaned_data['fecha_desde'])
+        
+        if filtro_form.cleaned_data.get('fecha_hasta'):
+            fecha_hasta = filtro_form.cleaned_data['fecha_hasta']
+            # Incluir todo el día
+            fecha_hasta = datetime.combine(fecha_hasta, datetime.max.time())
+            anotaciones = anotaciones.filter(fecha_creacion__lte=fecha_hasta)
+        
+        if filtro_form.cleaned_data.get('solo_graves'):
+            anotaciones = anotaciones.filter(es_grave=True)
+    
+    # Estadísticas generales
+    stats_generales = {
+        'total': anotaciones.count(),
+        'positivas': anotaciones.filter(tipo='positiva').count(),
+        'negativas': anotaciones.filter(tipo='negativa').count(),
+        'neutras': anotaciones.filter(tipo='neutra').count(),
+        'graves': anotaciones.filter(es_grave=True).count(),
+    }
+    
+    # Paginación
+    paginator = Paginator(anotaciones, 20)  # 20 anotaciones por página
+    page_number = request.GET.get('page')
+    anotaciones_paginas = paginator.get_page(page_number)
+    
+    # Estadísticas por estudiante (solo si no es alumno)
+    stats_estudiantes = []
+    if user_type != 'alumno':
+        # Obtener estudiantes únicos de las anotaciones filtradas
+        estudiantes_con_anotaciones = set(anotaciones.values_list('estudiante_id', flat=True))
+        
+        for estudiante_id in list(estudiantes_con_anotaciones)[:10]:  # Limitar a 10 para rendimiento
+            try:
+                estudiante = Estudiante.objects.get(id=estudiante_id)
+                stats = calcular_puntaje_comportamiento(estudiante)
+                stats['estudiante'] = estudiante
+                stats_estudiantes.append(stats)
+            except:
+                continue
+        
+        # Ordenar por puntaje
+        stats_estudiantes.sort(key=lambda x: x['puntaje_total'], reverse=True)
+    
+    context = {
+        'anotaciones': anotaciones_paginas,
+        'filtro_form': filtro_form,
+        'stats_generales': stats_generales,
+        'stats_estudiantes': stats_estudiantes,
+        'user_type': user_type,
+        'puede_crear': puede_crear,
+        'profesor_actual': profesor_actual,
+        'estudiante_actual': estudiante_actual,
+        'cursos_disponibles': cursos_disponibles,
+    }
+    
+    return render(request, 'libro_anotaciones.html', context)
+
+@login_required
+def crear_anotacion(request):
+    """Vista para crear una nueva anotación"""
+    # Verificar permisos
+    user_type = None
+    profesor_actual = None
+    
+    if hasattr(request.user, 'perfil'):
+        user_type = request.user.perfil.tipo_usuario
+        
+        if user_type == 'alumno':
+            messages.error(request, 'Los estudiantes no pueden crear anotaciones.')
+            return redirect('libro_anotaciones')
+        elif user_type == 'profesor':
+            try:
+                profesor_actual = request.user.profesor
+            except:
+                messages.error(request, 'Error al obtener información del profesor.')
+                return redirect('libro_anotaciones')
+        elif user_type not in ['director', 'administrador']:
+            messages.error(request, 'No tienes permisos para crear anotaciones.')
+            return redirect('libro_anotaciones')
+    else:
+        messages.error(request, 'Usuario sin perfil definido.')
+        return redirect('libro_anotaciones')
+    
+    if request.method == 'POST':
+        form = AnotacionForm(request.POST, profesor=profesor_actual)
+        if form.is_valid():
+            anotacion = form.save(commit=False)
+            
+            # Asignar profesor autor
+            if profesor_actual:
+                anotacion.profesor_autor = profesor_actual
+            else:
+                # Para admin/director, buscar un profesor por defecto o crear uno
+                # (esto podría mejorarse según la lógica de tu sistema)
+                anotacion.profesor_autor = Profesor.objects.first()
+            
+            anotacion.save()
+            
+            messages.success(
+                request, 
+                f'Anotación {anotacion.get_tipo_display().lower()} creada para {anotacion.estudiante.get_nombre_completo()}'
+            )
+            return redirect('libro_anotaciones')
+        else:
+            messages.error(request, 'Por favor corrige los errores en el formulario.')
+    else:
+        form = AnotacionForm(profesor=profesor_actual)
+    
+    context = {
+        'form': form,
+        'titulo': 'Crear Nueva Anotación',
+        'profesor_actual': profesor_actual,
+        'user_type': user_type,
+    }
+    
+    return render(request, 'crear_anotacion.html', context)
+
+@login_required
+def editar_anotacion(request, anotacion_id):
+    """Vista para editar una anotación existente"""
+    anotacion = get_object_or_404(Anotacion, id=anotacion_id)
+    
+    # Verificar permisos
+    user_type = None
+    profesor_actual = None
+    
+    if hasattr(request.user, 'perfil'):
+        user_type = request.user.perfil.tipo_usuario
+        
+        if user_type == 'alumno':
+            messages.error(request, 'Los estudiantes no pueden editar anotaciones.')
+            return redirect('libro_anotaciones')
+        elif user_type == 'profesor':
+            try:
+                profesor_actual = request.user.profesor
+                # Profesor solo puede editar sus propias anotaciones o de sus cursos
+                if anotacion.profesor_autor != profesor_actual:
+                    cursos_profesor = profesor_actual.get_cursos_asignados()
+                    if anotacion.curso not in cursos_profesor:
+                        messages.error(request, 'No tienes permisos para editar esta anotación.')
+                        return redirect('libro_anotaciones')
+            except:
+                messages.error(request, 'Error al verificar permisos.')
+                return redirect('libro_anotaciones')
+        elif user_type not in ['director', 'administrador']:
+            messages.error(request, 'No tienes permisos para editar anotaciones.')
+            return redirect('libro_anotaciones')
+    else:
+        messages.error(request, 'Usuario sin perfil definido.')
+        return redirect('libro_anotaciones')
+    
+    if request.method == 'POST':
+        form = AnotacionForm(request.POST, instance=anotacion, profesor=profesor_actual)
+        if form.is_valid():
+            anotacion_actualizada = form.save()
+            
+            messages.success(
+                request, 
+                f'Anotación actualizada para {anotacion.estudiante.get_nombre_completo()}'
+            )
+            return redirect('libro_anotaciones')
+        else:
+            messages.error(request, 'Por favor corrige los errores en el formulario.')
+    else:
+        form = AnotacionForm(instance=anotacion, profesor=profesor_actual)
+    
+    context = {
+        'form': form,
+        'anotacion': anotacion,
+        'titulo': f'Editar Anotación - {anotacion.estudiante.get_nombre_completo()}',
+        'profesor_actual': profesor_actual,
+        'user_type': user_type,
+    }
+    
+    return render(request, 'editar_anotacion.html', context)
+
+@login_required
+def eliminar_anotacion(request, anotacion_id):
+    """Vista para eliminar una anotación"""
+    anotacion = get_object_or_404(Anotacion, id=anotacion_id)
+    
+    # Verificar permisos (solo admin/director o el profesor autor)
+    user_type = None
+    if hasattr(request.user, 'perfil'):
+        user_type = request.user.perfil.tipo_usuario
+        
+        if user_type not in ['director', 'administrador']:
+            if user_type == 'profesor':
+                try:
+                    profesor_actual = request.user.profesor
+                    if anotacion.profesor_autor != profesor_actual:
+                        messages.error(request, 'Solo puedes eliminar tus propias anotaciones.')
+                        return redirect('libro_anotaciones')
+                except:
+                    messages.error(request, 'Error al verificar permisos.')
+                    return redirect('libro_anotaciones')
+            else:
+                messages.error(request, 'No tienes permisos para eliminar anotaciones.')
+                return redirect('libro_anotaciones')
+    else:
+        messages.error(request, 'Usuario sin perfil definido.')
+        return redirect('libro_anotaciones')
+    
+    if request.method == 'POST':
+        estudiante_nombre = anotacion.estudiante.get_nombre_completo()
+        anotacion.delete()
+        
+        messages.success(request, f'Anotación eliminada para {estudiante_nombre}.')
+        return redirect('libro_anotaciones')
+    
+    context = {
+        'anotacion': anotacion,
+        'titulo': f'Eliminar Anotación - {anotacion.estudiante.get_nombre_completo()}',
+    }
+    
+    return render(request, 'eliminar_anotacion.html', context)
+
+@login_required
+def detalle_comportamiento_estudiante(request, estudiante_id):
+    """Vista detallada del comportamiento de un estudiante específico"""
+    from .models import calcular_puntaje_comportamiento
+    from django.core.paginator import Paginator
+    
+    estudiante = get_object_or_404(Estudiante, id=estudiante_id)
+    
+    # Verificar permisos
+    user_type = None
+    puede_ver = False
+    
+    if hasattr(request.user, 'perfil'):
+        user_type = request.user.perfil.tipo_usuario
+        
+        if user_type == 'alumno':
+            # Estudiante solo ve su propio comportamiento
+            try:
+                estudiante_actual = request.user.estudiante
+                puede_ver = (estudiante == estudiante_actual)
+            except:
+                puede_ver = False
+        elif user_type == 'profesor':
+            # Profesor ve estudiantes de sus cursos
+            try:
+                profesor_actual = request.user.profesor
+                cursos_profesor = profesor_actual.get_cursos_asignados()
+                cursos_estudiante = estudiante.cursos.filter(anio=timezone.now().year)
+                puede_ver = cursos_profesor.filter(id__in=cursos_estudiante.values_list('id', flat=True)).exists()
+            except:
+                puede_ver = False
+        elif user_type in ['director', 'administrador']:
+            puede_ver = True
+    
+    if not puede_ver:
+        messages.error(request, 'No tienes permisos para ver el comportamiento de este estudiante.')
+        return redirect('libro_anotaciones')
+    
+    # Obtener curso actual del estudiante
+    curso_actual = estudiante.get_curso_actual()
+    
+    # Obtener todas las anotaciones del estudiante
+    anotaciones = Anotacion.objects.filter(estudiante=estudiante).select_related(
+        'curso', 'asignatura', 'profesor_autor'
+    ).order_by('-fecha_creacion')
+    
+    # Filtros opcionales por fecha
+    fecha_desde = request.GET.get('fecha_desde')
+    fecha_hasta = request.GET.get('fecha_hasta')
+    
+    if fecha_desde:
+        try:
+            fecha_desde_obj = datetime.strptime(fecha_desde, '%Y-%m-%d').date()
+            anotaciones = anotaciones.filter(fecha_creacion__gte=fecha_desde_obj)
+        except:
+            pass
+    
+    if fecha_hasta:
+        try:
+            fecha_hasta_obj = datetime.strptime(fecha_hasta, '%Y-%m-%d').date()
+            fecha_hasta_obj = datetime.combine(fecha_hasta_obj, datetime.max.time())
+            anotaciones = anotaciones.filter(fecha_creacion__lte=fecha_hasta_obj)
+        except:
+            pass
+    
+    # Calcular estadísticas
+    stats = calcular_puntaje_comportamiento(
+        estudiante, 
+        curso=curso_actual,
+        fecha_desde=datetime.strptime(fecha_desde, '%Y-%m-%d').date() if fecha_desde else None,
+        fecha_hasta=datetime.strptime(fecha_hasta, '%Y-%m-%d').date() if fecha_hasta else None
+    )
+    
+    # Paginación
+    paginator = Paginator(anotaciones, 15)
+    page_number = request.GET.get('page')
+    anotaciones_paginas = paginator.get_page(page_number)
+    
+    # Gráfico de evolución (últimos 30 días)
+    from datetime import timedelta
+    fecha_inicio_grafico = timezone.now().date() - timedelta(days=30)
+    
+    anotaciones_grafico = Anotacion.objects.filter(
+        estudiante=estudiante,
+        fecha_creacion__gte=fecha_inicio_grafico
+    ).values('fecha_creacion__date', 'puntos').order_by('fecha_creacion__date')
+    
+    # Datos para el gráfico
+    datos_grafico = {}
+    for anotacion in anotaciones_grafico:
+        fecha = anotacion['fecha_creacion__date']
+        if fecha not in datos_grafico:
+            datos_grafico[fecha] = 0
+        datos_grafico[fecha] += anotacion['puntos']
+    
+    context = {
+        'estudiante': estudiante,
+        'curso_actual': curso_actual,
+        'anotaciones': anotaciones_paginas,
+        'stats': stats,
+        'user_type': user_type,
+        'fecha_desde': fecha_desde,
+        'fecha_hasta': fecha_hasta,
+        'datos_grafico': datos_grafico,
+    }
+    
+    return render(request, 'detalle_comportamiento_estudiante.html', context)
+
+@login_required
+def ajax_obtener_estudiantes_curso(request):
+    """Vista AJAX para obtener estudiantes de un curso"""
+    if request.method == 'GET':
+        curso_id = request.GET.get('curso_id')
+        
+        if curso_id:
+            try:
+                curso = Curso.objects.get(id=curso_id)
+                estudiantes = curso.estudiantes.all().order_by('primer_nombre', 'apellido_paterno')
+                
+                data = {
+                    'estudiantes': [
+                        {
+                            'id': est.id,
+                            'nombre': est.get_nombre_completo(),
+                            'rut': est.numero_documento
+                        }
+                        for est in estudiantes
+                    ]
+                }
+                return JsonResponse(data)
+            except Curso.DoesNotExist:
+                return JsonResponse({'error': 'Curso no encontrado'}, status=404)
+        
+        return JsonResponse({'error': 'ID de curso requerido'}, status=400)
+    
+    return JsonResponse({'error': 'Método no permitido'}, status=405)
+
+@login_required  
+def ajax_obtener_estudiantes_filtro(request):
+    """Vista AJAX para obtener estudiantes por curso en filtros"""
+    if request.method == 'GET':
+        curso_id = request.GET.get('curso_id')
+        
+        if curso_id:
+            try:
+                curso = Curso.objects.get(id=curso_id)
+                
+                # Verificar permisos según el tipo de usuario
+                user_type = None
+                profesor_actual = None
+                
+                if hasattr(request.user, 'perfil'):
+                    user_type = request.user.perfil.tipo_usuario
+                    
+                    if user_type == 'profesor':
+                        try:
+                            profesor_actual = request.user.profesor
+                            cursos_disponibles = profesor_actual.get_cursos_asignados()
+                            # Si no tiene el curso asignado, pero es profesor, permitir si tiene estudiantes
+                            if curso not in cursos_disponibles:
+                                # Verificar si al menos tiene estudiantes en común
+                                estudiantes = curso.estudiantes.all()
+                                if not estudiantes.exists():
+                                    return JsonResponse({'error': 'Sin permisos para este curso'}, status=403)
+                        except:
+                            # Si hay error obteniendo el profesor, permitir la consulta
+                            pass
+                
+                estudiantes = curso.estudiantes.all().order_by('primer_nombre', 'apellido_paterno')
+                
+                data = {
+                    'estudiantes': [
+                        {
+                            'id': est.id,
+                            'nombre': est.get_nombre_completo(),
+                            'rut': est.numero_documento
+                        }
+                        for est in estudiantes
+                    ]
+                }
+                return JsonResponse(data)
+            except Curso.DoesNotExist:
+                return JsonResponse({'error': 'Curso no encontrado'}, status=404)
+        else:
+            # Si no hay curso seleccionado, devolver lista vacía
+            return JsonResponse({'estudiantes': []})
+    
+    return JsonResponse({'error': 'Método no permitido'}, status=405)

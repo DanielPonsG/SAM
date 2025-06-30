@@ -1,8 +1,7 @@
 from django import forms
-from .models import Estudiante, Profesor, EventoCalendario, Curso, HorarioCurso, Asignatura, Inscripcion, Calificacion, Grupo, PeriodoAcademico, AsistenciaAlumno, AsistenciaProfesor
+from .models import Estudiante, Profesor, EventoCalendario, Curso, HorarioCurso, Asignatura, Inscripcion, Calificacion, Grupo, PeriodoAcademico, AsistenciaAlumno, AsistenciaProfesor, Anotacion
 from datetime import date, timedelta
 from django.utils import timezone
-from django.core.exceptions import ValidationError
 
 def validar_rut(rut):
     """Validar formato y dígito verificador del RUT chileno"""
@@ -119,9 +118,9 @@ class EstudianteForm(forms.ModelForm):
             }),
             'numero_documento': forms.TextInput(attrs={
                 'class': 'form-control rut-input',
-                'placeholder': '20.589.644-9',
-                'maxlength': '15',
-                'pattern': '[0-9]{1,2}(\.[0-9]{3}){1,2}-[0-9kK]{1}'
+                'placeholder': '12345678-9',
+                'maxlength': '12',
+                'pattern': '[0-9]{1,2}[0-9]{3}[0-9]{3}-[0-9kK]{1}'
             }),
             'fecha_nacimiento': forms.DateInput(attrs={
                 'class': 'form-control',
@@ -157,7 +156,7 @@ class EstudianteForm(forms.ModelForm):
         if rut:
             # Validar formato y dígito verificador del RUT
             if not validar_rut(rut):
-                raise forms.ValidationError('RUT inválido. Formato esperado: 20.589.644-9')
+                raise forms.ValidationError('RUT inválido. Formato esperado: 12345678-9')
             # Formatear correctamente
             rut = formatear_rut(rut)
         return rut
@@ -223,9 +222,9 @@ class ProfesorForm(forms.ModelForm):
             }),
             'numero_documento': forms.TextInput(attrs={
                 'class': 'form-control rut-input',
-                'placeholder': '20.589.644-9',
-                'maxlength': '15',
-                'pattern': '[0-9]{1,2}(\.[0-9]{3}){1,2}-[0-9kK]{1}'
+                'placeholder': '12345678-9',
+                'maxlength': '12',
+                'pattern': '[0-9]{1,2}[0-9]{3}[0-9]{3}-[0-9kK]{1}'
             }),
             'fecha_nacimiento': forms.DateInput(attrs={
                 'class': 'form-control',
@@ -265,7 +264,7 @@ class ProfesorForm(forms.ModelForm):
         if rut:
             # Validar formato y dígito verificador del RUT
             if not validar_rut(rut):
-                raise forms.ValidationError('RUT inválido. Formato esperado: 20.589.644-9')
+                raise forms.ValidationError('RUT inválido. Formato esperado: 12345678-9')
             # Formatear correctamente
             rut = formatear_rut(rut)
         return rut
@@ -599,505 +598,141 @@ class CursoForm(forms.ModelForm):
 class HorarioCursoForm(forms.ModelForm):
     class Meta:
         model = HorarioCurso
-        fields = ['dia', 'hora_inicio', 'hora_fin', 'tipo_periodo', 'asignatura', 'profesor', 'observaciones']
-        widgets = {
-            'dia': forms.Select(attrs={
-                'class': 'form-control',
-                'required': True
-            }),
-            'hora_inicio': forms.TimeInput(attrs={
-                'class': 'form-control',
-                'type': 'time',
-                'required': True
-            }),
-            'hora_fin': forms.TimeInput(attrs={
-                'class': 'form-control', 
-                'type': 'time',
-                'required': True
-            }),
-            'tipo_periodo': forms.Select(attrs={
-                'class': 'form-control',
-                'required': True
-            }),
-            'asignatura': forms.Select(attrs={
-                'class': 'form-control'
-            }),
-            'profesor': forms.Select(attrs={
-                'class': 'form-control'
-            }),
-            'observaciones': forms.Textarea(attrs={
-                'class': 'form-control',
-                'rows': 2,
-                'placeholder': 'Observaciones opcionales...'
-            })
-        }
-        labels = {
-            'dia': 'Día de la semana',
-            'hora_inicio': 'Hora de inicio',
-            'hora_fin': 'Hora de fin',
-            'tipo_periodo': 'Tipo de período',
-            'asignatura': 'Asignatura',
-            'profesor': 'Profesor responsable',
-            'observaciones': 'Observaciones'
-        }
-    
-    def __init__(self, *args, **kwargs):
-        self.curso = kwargs.pop('curso', None)
-        super().__init__(*args, **kwargs)
-        
-        # Configurar queryset de asignaturas según el curso
-        if self.curso:
-            self.fields['asignatura'].queryset = self.curso.asignaturas.all()
-            self.fields['asignatura'].empty_label = "Seleccionar asignatura..."
-        else:
-            self.fields['asignatura'].queryset = Asignatura.objects.all()
-        
-        # Configurar profesores disponibles
-        self.fields['profesor'].queryset = Profesor.objects.all()
-        self.fields['profesor'].empty_label = "Seleccionar profesor..."
-        
-        # Configurar campos según el tipo de período
-        if self.instance and self.instance.pk:
-            if self.instance.tipo_periodo in ['recreo', 'almuerzo']:
-                self.fields['asignatura'].required = False
-                self.fields['profesor'].required = False
-                self.fields['asignatura'].widget.attrs['disabled'] = True
-                self.fields['profesor'].widget.attrs['disabled'] = True
-        
-        # Añadir help text
-        self.fields['tipo_periodo'].help_text = "Selecciona 'Clase' para períodos académicos, 'Recreo' o 'Almuerzo' para descansos"
-        self.fields['asignatura'].help_text = "Solo requerido para períodos de clase"
-        self.fields['profesor'].help_text = "El profesor debe estar asignado a la asignatura seleccionada"
-    
-    def clean(self):
-        cleaned_data = super().clean()
-        tipo_periodo = cleaned_data.get('tipo_periodo')
-        asignatura = cleaned_data.get('asignatura')
-        profesor = cleaned_data.get('profesor')
-        hora_inicio = cleaned_data.get('hora_inicio')
-        hora_fin = cleaned_data.get('hora_fin')
-        dia = cleaned_data.get('dia')
-        
-        # Validar horas
-        if hora_inicio and hora_fin:
-            if hora_inicio >= hora_fin:
-                raise forms.ValidationError("La hora de inicio debe ser menor que la hora de fin")
-        
-        # Validaciones según tipo de período
-        if tipo_periodo == 'clase':
-            if not asignatura:
-                raise forms.ValidationError("Para períodos de clase, la asignatura es obligatoria")
-            
-            # Validar que el profesor puede enseñar la asignatura
-            if profesor and asignatura:
-                profesores_asignatura = asignatura.get_todos_los_profesores()
-                if profesor not in profesores_asignatura:
-                    raise forms.ValidationError(
-                        f"El profesor {profesor.primer_nombre} {profesor.apellido_paterno} "
-                        f"no está asignado a la asignatura {asignatura.nombre}"
-                    )
-        
-        elif tipo_periodo in ['recreo', 'almuerzo']:
-            if asignatura:
-                cleaned_data['asignatura'] = None
-            if profesor:
-                cleaned_data['profesor'] = None
-        
-        # Crear instancia temporal para validaciones
-        if self.curso and dia and hora_inicio and hora_fin:
-            horario_temp = HorarioCurso(
-                curso=self.curso,
-                dia=dia,
-                hora_inicio=hora_inicio,
-                hora_fin=hora_fin,
-                tipo_periodo=tipo_periodo,
-                asignatura=asignatura,
-                profesor=profesor
-            )
-            
-            if self.instance and self.instance.pk:
-                horario_temp.pk = self.instance.pk
-            
-            try:
-                horario_temp.clean()
-            except ValidationError as e:
-                raise forms.ValidationError(f"Error de validación: {e.message}")
-        
-        return cleaned_data
-    
-    def save(self, commit=True):
-        instance = super().save(commit=False)
-        if self.curso:
-            instance.curso = self.curso
-        
-        if commit:
-            instance.save()
-        return instance
+        fields = ['dia', 'hora_inicio', 'hora_fin', 'asignatura']
 
-class HorarioRapidoForm(forms.Form):
-    """Formulario para asignación rápida de horarios"""
-    
-    asignatura = forms.ModelChoiceField(
-        queryset=Asignatura.objects.none(),
+class AsignarEstudianteForm(forms.Form):
+    """Formulario para asignar estudiantes pendientes a cursos"""
+    estudiante = forms.ModelChoiceField(
+        queryset=Estudiante.objects.none(),
+        label="Estudiante",
         widget=forms.Select(attrs={
-            'class': 'form-control',
+            'class': 'form-select',
             'required': True
         }),
-        label='Asignatura',
-        help_text='Selecciona la asignatura para este período'
+        help_text='Selecciona el estudiante que deseas asignar al curso'
     )
-    
-    profesor = forms.ModelChoiceField(
-        queryset=Profesor.objects.none(),
-        widget=forms.Select(attrs={
-            'class': 'form-control',
-            'required': True
-        }),
-        label='Profesor',
-        empty_label="Seleccionar profesor..."
-    )
-    
-    def __init__(self, *args, **kwargs):
-        self.curso = kwargs.pop('curso', None)
-        self.horario = kwargs.pop('horario', None)
-        super().__init__(*args, **kwargs)
-        
-        if self.curso:
-            # Solo asignaturas del curso
-            self.fields['asignatura'].queryset = self.curso.asignaturas.all()
-            
-        if self.horario and self.horario.asignatura:
-            # Solo profesores de la asignatura
-            self.fields['profesor'].queryset = self.horario.asignatura.get_todos_los_profesores()
-            
-            # Filtrar profesores disponibles en este horario
-            profesores_disponibles = []
-            for profesor in self.fields['profesor'].queryset:
-                horario_temp = HorarioCurso(
-                    curso=self.curso,
-                    profesor=profesor,
-                    dia=self.horario.dia,
-                    hora_inicio=self.horario.hora_inicio,
-                    hora_fin=self.horario.hora_fin,
-                    tipo_periodo='clase'
-                )
-                horario_temp.pk = self.horario.pk  # Para excluir este horario de la validación
-                
-                if not horario_temp.verificar_conflictos_profesor():
-                    profesores_disponibles.append(profesor.id)
-            
-            self.fields['profesor'].queryset = self.fields['profesor'].queryset.filter(id__in=profesores_disponibles)
-        else:
-            self.fields['profesor'].queryset = Profesor.objects.all()
-    
-    def clean(self):
-        cleaned_data = super().clean()
-        asignatura = cleaned_data.get('asignatura')
-        profesor = cleaned_data.get('profesor')
-        
-        if asignatura and profesor:
-            # Verificar que el profesor puede enseñar la asignatura
-            profesores_asignatura = asignatura.get_todos_los_profesores()
-            if profesor not in profesores_asignatura:
-                raise forms.ValidationError(
-                    f"El profesor {profesor.primer_nombre} {profesor.apellido_paterno} "
-                    f"no está asignado a la asignatura {asignatura.nombre}"
-                )
-        
-        return cleaned_data
-
-class CalificacionForm(forms.ModelForm):
-    """Formulario para editar calificaciones"""
-    
-    class Meta:
-        model = Calificacion
-        fields = ['nombre_evaluacion', 'puntaje', 'porcentaje', 'detalle', 'descripcion']
-        widgets = {
-            'nombre_evaluacion': forms.TextInput(attrs={
-                'class': 'form-control',
-                'placeholder': 'Ej: Prueba 1, Tarea 2, etc.'
-            }),
-            'puntaje': forms.NumberInput(attrs={
-                'class': 'form-control',
-                'min': '1.0',
-                'max': '7.0',
-                'step': '0.1',
-                'placeholder': '1.0 - 7.0'
-            }),
-            'porcentaje': forms.NumberInput(attrs={
-                'class': 'form-control',
-                'min': '0',
-                'max': '100',
-                'placeholder': '0 - 100'
-            }),
-            'detalle': forms.TextInput(attrs={
-                'class': 'form-control',
-                'placeholder': 'Ej: Excelente, Bueno, Regular, etc.'
-            }),
-            'descripcion': forms.Textarea(attrs={
-                'class': 'form-control',
-                'rows': 3,
-                'placeholder': 'Descripción adicional (opcional)'
-            })
-        }
-        labels = {
-            'nombre_evaluacion': 'Nombre de la Evaluación',
-            'puntaje': 'Puntaje (1.0 - 7.0)',
-            'porcentaje': 'Porcentaje (%)',
-            'detalle': 'Detalle/Observación',
-            'descripcion': 'Descripción Adicional'
-        }
-        help_texts = {
-            'puntaje': 'Ingresa una nota entre 1.0 y 7.0 según el sistema chileno',
-            'porcentaje': 'Porcentaje de logro (opcional)',
-            'detalle': 'Observación breve sobre el desempeño',
-            'descripcion': 'Información adicional sobre la evaluación'
-        }
-    
-    def clean_puntaje(self):
-        puntaje = self.cleaned_data.get('puntaje')
-        if puntaje is not None:
-            if puntaje < 1.0 or puntaje > 7.0:
-                raise forms.ValidationError('El puntaje debe estar entre 1.0 y 7.0')
-        return puntaje
-    
-    def clean_porcentaje(self):
-        porcentaje = self.cleaned_data.get('porcentaje')
-        if porcentaje is not None:
-            if porcentaje < 0 or porcentaje > 100:
-                raise forms.ValidationError('El porcentaje debe estar entre 0 y 100')
-        return porcentaje
-
-class AsistenciaAlumnoForm(forms.ModelForm):
-    """Formulario mejorado para asistencia de alumnos"""
-    
-    class Meta:
-        model = AsistenciaAlumno
-        fields = ['estudiante', 'curso', 'asignatura', 'profesor_registro', 
-                 'presente', 'observacion', 'justificacion']
-        widgets = {
-            'estudiante': forms.Select(attrs={'class': 'form-select'}),
-            'curso': forms.Select(attrs={'class': 'form-select'}),
-            'asignatura': forms.Select(attrs={'class': 'form-select'}),
-            'profesor_registro': forms.Select(attrs={'class': 'form-select'}),
-            'presente': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
-            'observacion': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Observaciones sobre la asistencia'}),
-            'justificacion': forms.Textarea(attrs={'class': 'form-control', 'rows': 3, 'placeholder': 'Justificación en caso de ausencia'})
-        }
-        labels = {
-            'estudiante': 'Estudiante',
-            'curso': 'Curso',
-            'asignatura': 'Asignatura',
-            'profesor_registro': 'Profesor que registra',
-            'presente': 'Presente',
-            'observacion': 'Observación',
-            'justificacion': 'Justificación'
-        }
-
-    def __init__(self, *args, **kwargs):
-        curso_id = kwargs.pop('curso_id', None)
-        profesor_id = kwargs.pop('profesor_id', None)
-        super().__init__(*args, **kwargs)
-        
-        # Filtrar estudiantes por curso si se proporciona
-        if curso_id:
-            try:
-                curso = Curso.objects.get(id=curso_id)
-                self.fields['estudiante'].queryset = curso.estudiantes.all().order_by('primer_nombre', 'apellido_paterno')
-                self.fields['curso'].queryset = Curso.objects.filter(id=curso_id)
-                self.fields['asignatura'].queryset = curso.asignaturas.all().order_by('nombre')
-            except Curso.DoesNotExist:
-                pass
-        
-        # Establecer profesor por defecto si se proporciona
-        if profesor_id:
-            try:
-                profesor = Profesor.objects.get(id=profesor_id)
-                self.fields['profesor_registro'].queryset = Profesor.objects.filter(id=profesor_id)
-                # Filtrar asignaturas del profesor
-                asignaturas_profesor = profesor.asignaturas_responsable.all()
-                if hasattr(profesor, 'profesor_responsable'):
-                    asignaturas_profesor = asignaturas_profesor | Asignatura.objects.filter(profesor_responsable=profesor)
-                self.fields['asignatura'].queryset = asignaturas_profesor.distinct().order_by('nombre')
-            except Profesor.DoesNotExist:
-                pass
-
-class AsistenciaProfesorForm(forms.ModelForm):
-    """Formulario mejorado para asistencia de profesores"""
-    
-    class Meta:
-        model = AsistenciaProfesor
-        fields = ['profesor', 'asignatura', 'curso', 
-                 'presente', 'observacion', 'justificacion']
-        widgets = {
-            'profesor': forms.Select(attrs={'class': 'form-select'}),
-            'asignatura': forms.Select(attrs={'class': 'form-select'}),
-            'curso': forms.Select(attrs={'class': 'form-select'}),
-            'presente': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
-            'observacion': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Observaciones sobre la asistencia'}),
-            'justificacion': forms.Textarea(attrs={'class': 'form-control', 'rows': 3, 'placeholder': 'Justificación en caso de ausencia'})
-        }
-        labels = {
-            'profesor': 'Profesor',
-            'asignatura': 'Asignatura (opcional)',
-            'curso': 'Curso (opcional)',
-            'presente': 'Presente',
-            'observacion': 'Observación',
-            'justificacion': 'Justificación'
-        }
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        
-        # Hacer campos opcionales
-        self.fields['asignatura'].required = False
-        self.fields['curso'].required = False
-        self.fields['justificacion'].required = False
-        
-        # Ordenar opciones
-        self.fields['profesor'].queryset = Profesor.objects.all().order_by('primer_nombre', 'apellido_paterno')
-        self.fields['asignatura'].queryset = Asignatura.objects.all().order_by('nombre')
-        self.fields['curso'].queryset = Curso.objects.all().order_by('nivel', 'paralelo')
-
-# Formulario específico para registro masivo de asistencia de alumnos
-class RegistroMasivoAsistenciaForm(forms.Form):
-    """Formulario simplificado para registro masivo de asistencia solo por curso"""
     
     curso = forms.ModelChoiceField(
-        queryset=Curso.objects.all(),
-        widget=forms.Select(attrs={'class': 'form-select'}),
-        label='Curso',
-        help_text='Selecciona el curso para registrar asistencia'
+        queryset=Curso.objects.none(),
+        label="Curso de destino",
+        widget=forms.Select(attrs={
+            'class': 'form-select',
+            'required': True
+        }),
+        help_text='Selecciona el curso al que asignar el estudiante'
     )
 
     def __init__(self, *args, **kwargs):
-        cursos_disponibles = kwargs.pop('cursos_disponibles', None)
         super().__init__(*args, **kwargs)
+        anio_actual = timezone.now().year
         
-        # Filtrar cursos disponibles según permisos del usuario
-        if cursos_disponibles is not None:
-            self.fields['curso'].queryset = cursos_disponibles
-        else:
-            self.fields['curso'].queryset = Curso.objects.all().order_by('nivel', 'paralelo')
+        # Obtener estudiantes no asignados a ningún curso del año actual
+        cursos_actuales = Curso.objects.filter(anio=anio_actual)
+        estudiantes_asignados_ids = set()
+        
+        for curso in cursos_actuales:
+            estudiantes_curso = list(curso.estudiantes.values_list('id', flat=True))
+            estudiantes_asignados_ids.update(estudiantes_curso)
+        
+        # Estudiantes disponibles (no asignados)
+        estudiantes_disponibles = Estudiante.objects.exclude(
+            id__in=estudiantes_asignados_ids
+        ).order_by('primer_nombre', 'apellido_paterno')
+        
+        self.fields['estudiante'].queryset = estudiantes_disponibles
+        self.fields['estudiante'].empty_label = "-- Seleccionar estudiante --"
+        
+        # Cursos del año actual
+        cursos_actuales = Curso.objects.filter(anio=anio_actual).order_by('nivel', 'paralelo')
+        self.fields['curso'].queryset = cursos_actuales
+        self.fields['curso'].empty_label = "-- Seleccionar curso --"
+
+    def clean(self):
+        cleaned_data = super().clean()
+        estudiante = cleaned_data.get('estudiante')
+        curso = cleaned_data.get('curso')
+        
+        if estudiante and curso:
+            # Verificar que el estudiante no esté ya en otro curso del año actual
+            anio_actual = timezone.now().year
+            cursos_existentes = Curso.objects.filter(
+                estudiantes=estudiante,
+                anio=anio_actual
+            )
+            
+            if cursos_existentes.exists():
+                curso_actual = cursos_existentes.first()
+                raise forms.ValidationError(
+                    f'El estudiante {estudiante.primer_nombre} {estudiante.apellido_paterno} '
+                    f'ya está asignado al curso {curso_actual.get_nivel_display()}{curso_actual.paralelo}.'
+                )
+        
+        return cleaned_data
 
 class AsignaturaForm(forms.ModelForm):
-    """Formulario para crear y editar asignaturas con múltiples profesores"""
-    
-    profesores_responsables = forms.ModelMultipleChoiceField(
-        queryset=Profesor.objects.all(),
-        widget=forms.SelectMultiple(attrs={
-            'class': 'form-control chosen-select',
-            'multiple': True,
-            'size': '6'
-        }),
-        required=False,
-        label='Profesores Responsables',
-        help_text='Mantén presionada Ctrl para seleccionar múltiples profesores'
-    )
-    
-    # Agregar campo de cursos que faltaba
+    # Campo para seleccionar cursos
     cursos = forms.ModelMultipleChoiceField(
-        queryset=None,  # Se configurará en __init__
+        queryset=Curso.objects.all(),
         widget=forms.SelectMultiple(attrs={
-            'class': 'form-control chosen-select',
+            'class': 'form-control',
             'multiple': True,
             'size': '6'
         }),
+        label='Cursos Asociados',
         required=False,
-        label='Cursos Asignados',
-        help_text='Mantén presionada Ctrl para seleccionar múltiples cursos'
+        help_text='Mantén presionada Ctrl (o Cmd en Mac) para seleccionar varios cursos'
     )
     
     class Meta:
         model = Asignatura
-        fields = ['nombre', 'codigo_asignatura', 'descripcion', 'profesores_responsables', 'cursos']
+        fields = ['codigo_asignatura', 'nombre', 'descripcion', 'profesor_responsable', 'cursos']
         widgets = {
-            'nombre': forms.TextInput(attrs={
-                'class': 'form-control',
-                'placeholder': 'Ej: Matemáticas Aplicadas'
-            }),
             'codigo_asignatura': forms.TextInput(attrs={
                 'class': 'form-control',
-                'placeholder': 'Ej: MAT-01'
+                'placeholder': 'Ej: MAT001',
+                'maxlength': '10'
+            }),
+            'nombre': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Ej: Matemáticas'
             }),
             'descripcion': forms.Textarea(attrs={
                 'class': 'form-control',
                 'rows': 3,
-                'placeholder': 'Descripción de la asignatura (opcional)'
+                'placeholder': 'Descripción detallada de la asignatura'
+            }),
+            'profesor_responsable': forms.Select(attrs={
+                'class': 'form-control'
             })
         }
         labels = {
-            'nombre': 'Nombre de la Asignatura',
             'codigo_asignatura': 'Código de Asignatura',
-            'descripcion': 'Descripción'
+            'nombre': 'Nombre de la Asignatura',
+            'descripcion': 'Descripción',
+            'profesor_responsable': 'Profesor Responsable'
         }
     
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         
-        # Configurar profesores disponibles
-        self.fields['profesores_responsables'].queryset = Profesor.objects.all().order_by('primer_nombre', 'apellido_paterno')
+        # Configurar queryset de profesores
+        self.fields['profesor_responsable'].queryset = Profesor.objects.select_related('user').order_by('primer_nombre', 'apellido_paterno')
+        self.fields['profesor_responsable'].empty_label = "Seleccionar profesor..."
         
-        # Configurar cursos disponibles
-        from .models import Curso
+        # Configurar queryset de cursos
         self.fields['cursos'].queryset = Curso.objects.all().order_by('nivel', 'paralelo')
         
-        # Si estamos editando, preseleccionar los profesores y cursos actuales
-        if self.instance and self.instance.pk:
-            self.initial['profesores_responsables'] = self.instance.profesores_responsables.all()
-            self.initial['cursos'] = self.instance.cursos.all()
-    
-    def clean_codigo_asignatura(self):
-        codigo = self.cleaned_data.get('codigo_asignatura', '').strip().upper()
-        
-        if not codigo:
-            raise forms.ValidationError("El código de asignatura es obligatorio")
-        
-        # Verificar unicidad
-        queryset = Asignatura.objects.filter(codigo_asignatura=codigo)
-        if self.instance and self.instance.pk:
-            queryset = queryset.exclude(pk=self.instance.pk)
-        
-        if queryset.exists():
-            raise forms.ValidationError(f"Ya existe una asignatura con el código '{codigo}'")
-        
-        return codigo
-    
-    def clean_nombre(self):
-        nombre = self.cleaned_data.get('nombre', '').strip()
-        
-        if not nombre:
-            raise forms.ValidationError("El nombre de la asignatura es obligatorio")
-        
-        # Verificar que no exista otra asignatura con el mismo nombre
-        queryset = Asignatura.objects.filter(nombre__iexact=nombre)
-        if self.instance and self.instance.pk:
-            queryset = queryset.exclude(pk=self.instance.pk)
-        
-        if queryset.exists():
-            raise forms.ValidationError(
-                f'Ya existe una asignatura con el nombre "{nombre}". '
-                'Por favor, usa un nombre diferente.'
-            )
-        return nombre
+        # Si estamos editando, cargar cursos asociados
+        if self.instance.pk:
+            self.fields['cursos'].initial = self.instance.cursos.all()
     
     def save(self, commit=True):
-        instance = super().save(commit=commit)
-        
+        asignatura = super().save(commit=commit)
         if commit:
-            # Limpiar profesores anteriores de la relación inversa
-            for profesor in Profesor.objects.filter(asignaturas=instance):
-                profesor.asignaturas.remove(instance)
-            
-            # Guardar las relaciones many-to-many
-            instance.profesores_responsables.set(self.cleaned_data['profesores_responsables'])
-            instance.cursos.set(self.cleaned_data['cursos'])
-            
-            # También agregar las asignaturas a los profesores
-            for profesor in self.cleaned_data['profesores_responsables']:
-                profesor.asignaturas.add(instance)
-        
-        return instance
+            # Guardar cursos asociados
+            cursos_seleccionados = self.cleaned_data.get('cursos', [])
+            asignatura.cursos.set(cursos_seleccionados)
+        return asignatura
 
 class AsignaturaCompletaForm(forms.ModelForm):
     # Campo para seleccionar cursos
@@ -1135,153 +770,443 @@ class AsignaturaCompletaForm(forms.ModelForm):
     
     class Meta:
         model = Asignatura
-        fields = ['nombre', 'codigo_asignatura', 'descripcion', 'profesores_responsables', 'cursos', 'dias']
+        fields = ['nombre', 'codigo_asignatura', 'descripcion', 'profesor_responsable']
         widgets = {
             'nombre': forms.TextInput(attrs={
                 'class': 'form-control',
-                'placeholder': 'Ej: Matemáticas Aplicadas'
+                'placeholder': 'Ej: Matemáticas, Historia, Ciencias, etc.'
             }),
             'codigo_asignatura': forms.TextInput(attrs={
                 'class': 'form-control',
-                'placeholder': 'Ej: MAT-01'
+                'placeholder': 'Ej: MAT001, HIS001, etc.'
             }),
             'descripcion': forms.Textarea(attrs={
                 'class': 'form-control',
                 'rows': 3,
-                'placeholder': 'Descripción de la asignatura'
+                'placeholder': 'Descripción opcional de la asignatura'
             }),
-            'profesores_responsables': forms.CheckboxSelectMultiple(attrs={
-                'class': 'form-check-input'
+            'profesor_responsable': forms.Select(attrs={
+                'class': 'form-select'
             })
-        }
-        labels = {
-            'nombre': 'Nombre de la Asignatura',
-            'codigo_asignatura': 'Código de Asignatura',
-            'descripcion': 'Descripción',
-            'profesores_responsables': 'Profesores Responsables'
         }
     
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         
-        # Configurar querysets
-        self.fields['cursos'].queryset = Curso.objects.all().order_by('nivel', 'paralelo')
-        self.fields['profesores_responsables'].queryset = Profesor.objects.all().order_by('primer_nombre', 'apellido_paterno')
+        # Filtrar profesores que NO tengan asignaturas asignadas o permitir vacío
+        profesores_sin_asignatura = Profesor.objects.filter(
+            asignaturas_responsable__isnull=True
+        ).distinct().order_by('primer_nombre', 'apellido_paterno')
         
-        # Si estamos editando, precargar datos
-        if self.instance and self.instance.pk:
-            self.initial['cursos'] = self.instance.cursos.all()
-            self.initial['profesores_responsables'] = self.instance.profesores_responsables.all()
+        # Si estamos editando, incluir el profesor actual si lo tiene
+        if self.instance and self.instance.pk and self.instance.profesor_responsable:
+            profesores_disponibles = (profesores_sin_asignatura | 
+                                    Profesor.objects.filter(id=self.instance.profesor_responsable.id)
+                                    ).distinct().order_by('primer_nombre', 'apellido_paterno')
+        else:
+            profesores_disponibles = profesores_sin_asignatura
+        
+        self.fields['profesor_responsable'].queryset = profesores_disponibles
+        self.fields['profesor_responsable'].empty_label = "-- Sin profesor asignado --"
+        self.fields['profesor_responsable'].required = False
+        
+        # Configurar cursos disponibles
+        anio_actual = timezone.now().year
+        self.fields['cursos'].queryset = Curso.objects.filter(
+            anio=anio_actual
+        ).order_by('nivel', 'paralelo')
+        
+        # Hacer campos no requeridos
+        self.fields['descripcion'].required = False
+        self.fields['cursos'].required = False
+        self.fields['dias'].required = False
     
     def clean_codigo_asignatura(self):
-        codigo = self.cleaned_data.get('codigo_asignatura', '').strip().upper()
-        
-        if not codigo:
-            raise forms.ValidationError("El código de asignatura es obligatorio")
-        
-        # Verificar unicidad
-        queryset = Asignatura.objects.filter(codigo_asignatura=codigo)
-        if self.instance and self.instance.pk:
-            queryset = queryset.exclude(pk=self.instance.pk)
-        
-        if queryset.exists():
-            raise forms.ValidationError(f"Ya existe una asignatura con el código '{codigo}'")
-        
+        codigo = self.cleaned_data.get('codigo_asignatura')
+        if codigo:
+            # Verificar que el código no exista (excepto si estamos editando)
+            existing = Asignatura.objects.filter(codigo_asignatura=codigo)
+            if self.instance and self.instance.pk:
+                existing = existing.exclude(pk=self.instance.pk)
+            
+            if existing.exists():
+                raise forms.ValidationError(
+                    f'Ya existe una asignatura con el código "{codigo}". '
+                    'Por favor, usa un código diferente.'
+                )
         return codigo
     
     def clean_nombre(self):
-        nombre = self.cleaned_data.get('nombre', '').strip()
-        
-        if not nombre:
-            raise forms.ValidationError("El nombre de la asignatura es obligatorio")
-        
-        # Verificar que no exista otra asignatura con el mismo nombre
-        queryset = Asignatura.objects.filter(nombre__iexact=nombre)
-        if self.instance and self.instance.pk:
-            queryset = queryset.exclude(pk=self.instance.pk)
-        
-        if queryset.exists():
-            raise forms.ValidationError(
-                f'Ya existe una asignatura con el nombre "{nombre}". '
-                'Por favor, usa un nombre diferente.'
-            )
+        nombre = self.cleaned_data.get('nombre')
+        if nombre:
+            # Verificar que el nombre no exista (excepto si estamos editando)
+            existing = Asignatura.objects.filter(nombre__iexact=nombre)
+            if self.instance and self.instance.pk:
+                existing = existing.exclude(pk=self.instance.pk)
+            
+            if existing.exists():
+                raise forms.ValidationError(
+                    f'Ya existe una asignatura con el nombre "{nombre}". '
+                    'Por favor, usa un nombre diferente.'
+                )
         return nombre
     
     def save(self, commit=True):
-        instance = super().save(commit=commit)
+        asignatura = super().save(commit=commit)
         
         if commit:
-            # Guardar las relaciones many-to-many
-            instance.profesores_responsables.set(self.cleaned_data['profesores_responsables'])
-            instance.cursos.set(self.cleaned_data['cursos'])
-            
-            # Sincronizar relaciones inversas con profesores
-            for profesor in Profesor.objects.filter(asignaturas=instance):
-                profesor.asignaturas.remove(instance)
-            
-            for profesor in self.cleaned_data['profesores_responsables']:
-                profesor.asignaturas.add(instance)
+            # Asignar la asignatura a los cursos seleccionados
+            cursos_seleccionados = self.cleaned_data.get('cursos', [])
+            if cursos_seleccionados:
+                for curso in cursos_seleccionados:
+                    curso.asignaturas.add(asignatura)
         
-        return instance
+        return asignatura
 
 class SeleccionCursoAlumnoForm(forms.Form):
     curso = forms.ModelChoiceField(queryset=Curso.objects.all(), label="Curso")
     asignatura = forms.ModelChoiceField(queryset=Asignatura.objects.none(), label="Asignatura", required=False)
     alumno = forms.ModelChoiceField(queryset=Estudiante.objects.none(), label="Alumno", required=False)
 
-class AsignarEstudianteForm(forms.Form):
-    """Formulario para asignar estudiantes pendientes a cursos"""
+class CalificacionForm(forms.ModelForm):
+    class Meta:
+        model = Calificacion
+        fields = ['nombre_evaluacion', 'puntaje', 'descripcion']
+
+class AsistenciaAlumnoForm(forms.ModelForm):
+    class Meta:
+        model = AsistenciaAlumno
+        fields = ['estudiante', 'asignatura', 'fecha', 'presente', 'observacion']
+
+class AsistenciaProfesorForm(forms.ModelForm):
+    class Meta:
+        model = AsistenciaProfesor
+        fields = ['profesor', 'asignatura', 'fecha', 'presente', 'observacion']
+
+class AnotacionForm(forms.ModelForm):
+    """Formulario para crear y editar anotaciones del libro de comportamiento"""
     
-    estudiante = forms.ModelChoiceField(
-        queryset=Estudiante.objects.none(),
-        widget=forms.Select(attrs={
-            'class': 'form-control',
-            'required': True
-        }),
-        label='Estudiante',
-        help_text='Selecciona el estudiante a asignar'
-    )
-    
-    curso = forms.ModelChoiceField(
-        queryset=Curso.objects.none(),
-        widget=forms.Select(attrs={
-            'class': 'form-control',
-            'required': True
-        }),
-        label='Curso',
-        help_text='Selecciona el curso de destino'
-    )
+    class Meta:
+        model = Anotacion
+        fields = [
+            'estudiante', 'curso', 'asignatura', 'tipo', 'categoria', 
+            'titulo', 'descripcion', 'puntos', 'es_grave', 
+            'requiere_atencion_apoderado'
+        ]
+        widgets = {
+            'estudiante': forms.Select(attrs={
+                'class': 'form-select',
+                'required': True
+            }),
+            'curso': forms.Select(attrs={
+                'class': 'form-select',
+                'required': True
+            }),
+            'asignatura': forms.Select(attrs={
+                'class': 'form-select'
+            }),
+            'tipo': forms.Select(attrs={
+                'class': 'form-select',
+                'required': True,
+                'onchange': 'actualizarPuntos()'
+            }),
+            'categoria': forms.Select(attrs={
+                'class': 'form-select',
+                'required': True
+            }),
+            'titulo': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Título descriptivo de la anotación',
+                'maxlength': 200,
+                'required': True
+            }),
+            'descripcion': forms.Textarea(attrs={
+                'class': 'form-control',
+                'rows': 4,
+                'placeholder': 'Descripción detallada de la situación...',
+                'required': True
+            }),
+            'puntos': forms.NumberInput(attrs={
+                'class': 'form-control',
+                'min': -20,
+                'max': 20,
+                'step': 1
+            }),
+            'es_grave': forms.CheckboxInput(attrs={
+                'class': 'form-check-input'
+            }),
+            'requiere_atencion_apoderado': forms.CheckboxInput(attrs={
+                'class': 'form-check-input'
+            }),
+        }
+        labels = {
+            'estudiante': 'Estudiante',
+            'curso': 'Curso',
+            'asignatura': 'Asignatura (opcional)',
+            'tipo': 'Tipo de Anotación',
+            'categoria': 'Categoría',
+            'titulo': 'Título',
+            'descripcion': 'Descripción',
+            'puntos': 'Puntos',
+            'es_grave': 'Anotación Grave',
+            'requiere_atencion_apoderado': 'Requiere Atención del Apoderado',
+        }
+        help_texts = {
+            'asignatura': 'Opcional: Selecciona la asignatura relacionada',
+            'puntos': 'Puntos automáticos según tipo: Positiva(+5), Negativa(-3), Neutra(0)',
+            'es_grave': 'Marcar si es una falta grave que requiere atención especial',
+            'requiere_atencion_apoderado': 'Marcar si se debe comunicar al apoderado',
+        }
     
     def __init__(self, *args, **kwargs):
+        profesor = kwargs.pop('profesor', None)
         super().__init__(*args, **kwargs)
+        
         from django.utils import timezone
+        anio_actual = timezone.now().year
         
-        # Solo estudiantes sin curso asignado en el año actual
-        cursos_queryset = Curso.objects.filter(anio=timezone.now().year)
-        estudiantes_asignados_ids = set()
-        for curso in cursos_queryset:
-            estudiantes_curso = list(curso.estudiantes.values_list('id', flat=True))
-            estudiantes_asignados_ids.update(estudiantes_curso)
+        # Filtrar cursos según el tipo de usuario
+        if profesor:
+            # Profesor: solo sus cursos donde es jefe o tiene asignaturas
+            cursos_ids = set()
+            
+            # Cursos donde es jefe
+            cursos_jefe = profesor.cursos_jefatura.filter(anio=anio_actual)
+            cursos_ids.update(cursos_jefe.values_list('id', flat=True))
+            
+            # Obtener cursos donde el profesor tiene asignaturas asignadas
+            try:
+                # Intentar usar la relación many-to-many si existe
+                cursos_asignaturas = Curso.objects.filter(
+                    asignaturas__profesores_responsables=profesor,
+                    anio=anio_actual
+                ).distinct()
+                cursos_ids.update(cursos_asignaturas.values_list('id', flat=True))
+            except:
+                pass
+            
+            try:
+                # Intentar usar la relación legacy si existe
+                cursos_legacy = Curso.objects.filter(
+                    asignaturas__profesor_responsable=profesor,
+                    anio=anio_actual
+                ).distinct()
+                cursos_ids.update(cursos_legacy.values_list('id', flat=True))
+            except:
+                pass
+            
+            # Si no tiene cursos asignados, permitir ver todos los cursos con estudiantes
+            if not cursos_ids:
+                cursos_disponibles = Curso.objects.filter(
+                    anio=anio_actual,
+                    estudiantes__isnull=False
+                ).distinct()
+            else:
+                cursos_disponibles = Curso.objects.filter(
+                    id__in=cursos_ids,
+                    estudiantes__isnull=False
+                ).distinct()
+            
+            self.fields['curso'].queryset = cursos_disponibles.order_by('nivel', 'paralelo')
+            
+            # Filtrar asignaturas del profesor
+            try:
+                asignaturas_ids = set()
+                asignaturas_profesor = profesor.asignaturas.all()
+                asignaturas_ids.update(asignaturas_profesor.values_list('id', flat=True))
+                
+                asignaturas_responsable = Asignatura.objects.filter(profesor_responsable=profesor)
+                asignaturas_ids.update(asignaturas_responsable.values_list('id', flat=True))
+                
+                if asignaturas_ids:
+                    asignaturas_disponibles = Asignatura.objects.filter(id__in=asignaturas_ids)
+                else:
+                    asignaturas_disponibles = Asignatura.objects.all()
+            except:
+                asignaturas_disponibles = Asignatura.objects.all()
+            
+            self.fields['asignatura'].queryset = asignaturas_disponibles.order_by('nombre')
+        else:
+            # Admin/Director: todos los cursos del año actual con estudiantes
+            cursos_con_estudiantes = Curso.objects.filter(
+                anio=anio_actual,
+                estudiantes__isnull=False
+            ).distinct().order_by('nivel', 'paralelo')
+            
+            self.fields['curso'].queryset = cursos_con_estudiantes
+            self.fields['asignatura'].queryset = Asignatura.objects.all().order_by('nombre')
         
-        self.fields['estudiante'].queryset = Estudiante.objects.exclude(
-            id__in=estudiantes_asignados_ids
-        ).order_by('primer_nombre', 'apellido_paterno')
+        # Hacer que el campo estudiante se filtre dinámicamente por AJAX
+        self.fields['estudiante'].queryset = Estudiante.objects.none()
         
-        # Solo cursos del año actual
-        self.fields['curso'].queryset = cursos_queryset.order_by('nivel', 'paralelo')
+        # Si estamos editando una anotación existente, configurar los campos
+        if self.instance.pk:  # Editando anotación existente
+            # Hacer que curso y estudiante no sean editables
+            self.fields['curso'].widget.attrs['disabled'] = True
+            self.fields['estudiante'].widget.attrs['disabled'] = True
+            
+            # Configurar el queryset del estudiante para mostrar solo el actual
+            if self.instance.estudiante:
+                self.fields['estudiante'].queryset = Estudiante.objects.filter(id=self.instance.estudiante.id)
+            
+            # Configurar el queryset del curso para mostrar solo el actual
+            if self.instance.curso:
+                self.fields['curso'].queryset = Curso.objects.filter(id=self.instance.curso.id)
+        else:
+            # Configurar valores por defecto para nuevas anotaciones
+            self.fields['puntos'].initial = 0
     
     def clean(self):
         cleaned_data = super().clean()
+        tipo = cleaned_data.get('tipo')
+        es_grave = cleaned_data.get('es_grave')
         estudiante = cleaned_data.get('estudiante')
+        
+        # Si estamos editando, preservar los valores originales de curso y estudiante
+        if self.instance.pk:
+            cleaned_data['curso'] = self.instance.curso
+            cleaned_data['estudiante'] = self.instance.estudiante
         curso = cleaned_data.get('curso')
         
+        # Validar que el estudiante pertenezca al curso seleccionado
         if estudiante and curso:
-            # Verificar que el estudiante no esté ya asignado al curso
-            if curso.estudiantes.filter(id=estudiante.id).exists():
-                raise ValidationError(
-                    f'El estudiante {estudiante.primer_nombre} {estudiante.apellido_paterno} '
-                    f'ya está asignado al curso {curso.get_nivel_display()}{curso.paralelo}.',
-                    code='estudiante_ya_asignado'
+            if not curso.estudiantes.filter(id=estudiante.id).exists():
+                raise forms.ValidationError(
+                    f'El estudiante {estudiante.get_nombre_completo()} no pertenece al curso {curso}.',
+                    code='estudiante_no_pertenece_curso'
                 )
         
+        # Ajustar puntos automáticamente si no se especificaron
+        puntos = cleaned_data.get('puntos')
+        if puntos == 0 and tipo:
+            if tipo == 'positiva':
+                cleaned_data['puntos'] = 5
+            elif tipo == 'negativa':
+                cleaned_data['puntos'] = -3 * (2 if es_grave else 1)
+            else:  # neutra
+                cleaned_data['puntos'] = 0
+        
         return cleaned_data
+
+class FiltroAnotacionesForm(forms.Form):
+    """Formulario para filtrar las anotaciones en el libro"""
+    
+    curso = forms.ModelChoiceField(
+        queryset=Curso.objects.none(),
+        required=False,
+        empty_label="Todos los cursos",
+        widget=forms.Select(attrs={'class': 'form-select'})
+    )
+    
+    estudiante = forms.ModelChoiceField(
+        queryset=Estudiante.objects.none(),
+        required=False,
+        empty_label="Todos los estudiantes",
+        widget=forms.Select(attrs={'class': 'form-select'})
+    )
+    
+    tipo = forms.ChoiceField(
+        choices=[('', 'Todos los tipos')] + Anotacion.TIPOS_ANOTACION,
+        required=False,
+        widget=forms.Select(attrs={'class': 'form-select'})
+    )
+    
+    categoria = forms.ChoiceField(
+        choices=[('', 'Todas las categorías')] + Anotacion.CATEGORIAS,
+        required=False,
+        widget=forms.Select(attrs={'class': 'form-select'})
+    )
+    
+    fecha_desde = forms.DateField(
+        required=False,
+        widget=forms.DateInput(attrs={
+            'class': 'form-control',
+            'type': 'date'
+        }),
+        label='Desde'
+    )
+    
+    fecha_hasta = forms.DateField(
+        required=False,
+        widget=forms.DateInput(attrs={
+            'class': 'form-control',
+            'type': 'date'
+        }),
+        label='Hasta'
+    )
+    
+    solo_graves = forms.BooleanField(
+        required=False,
+        widget=forms.CheckboxInput(attrs={'class': 'form-check-input'}),
+        label='Solo anotaciones graves'
+    )
+    
+    def __init__(self, *args, **kwargs):
+        profesor = kwargs.pop('profesor', None)
+        super().__init__(*args, **kwargs)
+        
+        from django.utils import timezone
+        anio_actual = timezone.now().year
+        
+        # Configurar opciones según el tipo de usuario
+        if profesor:
+            # Profesor: solo sus cursos
+            cursos_disponibles = profesor.get_cursos_asignados()
+            self.fields['curso'].queryset = cursos_disponibles.order_by('nivel', 'paralelo')
+            
+            # Estudiantes de sus cursos (inicialmente vacío para carga dinámica)
+            estudiantes_ids = set()
+            for curso in cursos_disponibles:
+                estudiantes_ids.update(curso.estudiantes.values_list('id', flat=True))
+            
+            self.fields['estudiante'].queryset = Estudiante.objects.filter(
+                id__in=estudiantes_ids
+            ).order_by('primer_nombre', 'apellido_paterno')
+        else:
+            # Admin/Director: todos los cursos y estudiantes
+            self.fields['curso'].queryset = Curso.objects.filter(
+                anio=anio_actual
+            ).order_by('nivel', 'paralelo')
+            
+            self.fields['estudiante'].queryset = Estudiante.objects.all().order_by(
+                'primer_nombre', 'apellido_paterno'
+            )
+            
+        # Si hay un curso seleccionado en los datos, filtrar estudiantes
+        if self.data.get('curso'):
+            try:
+                curso_id = int(self.data.get('curso'))
+                curso = Curso.objects.get(id=curso_id)
+                
+                # Verificar permisos
+                if profesor:
+                    cursos_disponibles = profesor.get_cursos_asignados()
+                    if curso in cursos_disponibles:
+                        estudiantes_curso = curso.estudiantes.all().order_by('primer_nombre', 'apellido_paterno')
+                        self.fields['estudiante'].queryset = estudiantes_curso
+                else:
+                    # Admin/Director pueden ver todos los cursos
+                    estudiantes_curso = curso.estudiantes.all().order_by('primer_nombre', 'apellido_paterno')
+                    self.fields['estudiante'].queryset = estudiantes_curso
+            except (ValueError, Curso.DoesNotExist):
+                pass
+
+# Formulario específico para registro masivo de asistencia de alumnos
+class RegistroMasivoAsistenciaForm(forms.Form):
+    """Formulario simplificado para registro masivo de asistencia solo por curso"""
+    
+    curso = forms.ModelChoiceField(
+        queryset=Curso.objects.all(),
+        widget=forms.Select(attrs={'class': 'form-select'}),
+        label='Curso',
+        help_text='Selecciona el curso para registrar asistencia'
+    )
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Filtrar solo cursos del año actual
+        from django.utils import timezone
+        anio_actual = timezone.now().year
+        self.fields['curso'].queryset = Curso.objects.filter(
+            anio=anio_actual
+        ).order_by('nivel', 'paralelo')
