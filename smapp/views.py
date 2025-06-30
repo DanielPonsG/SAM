@@ -845,6 +845,9 @@ def listar_cursos(request):
     profesores_jefe_asignados = len([curso for curso in cursos if curso.profesor_jefe])
     total_asignaturas_asignadas = sum(curso.asignaturas.count() for curso in cursos)
     
+    # Obtener total de asignaturas disponibles en el sistema
+    total_asignaturas_disponibles = Asignatura.objects.count()
+    
     # Obtener estudiantes pendientes (no asignados a ningún curso del año actual)
     estudiantes_asignados_ids = set()
     for curso in cursos_queryset:
@@ -868,6 +871,7 @@ def listar_cursos(request):
         'total_estudiantes_asignados': total_estudiantes_asignados,
         'profesores_jefe_asignados': profesores_jefe_asignados,
         'total_asignaturas_asignadas': total_asignaturas_asignadas,
+        'total_asignaturas_disponibles': total_asignaturas_disponibles,
         'estudiantes_pendientes': estudiantes_pendientes,
         'total_estudiantes_pendientes': estudiantes_pendientes.count(),
         'form_asignar': form_asignar,
@@ -2096,3 +2100,173 @@ def agregar_nota_individual(request, estudiante_id, asignatura_id, evaluacion_no
         'es_nueva': True
     }
     return render(request, 'editar_nota.html', context)
+
+@login_required
+def gestionar_asignaturas_curso_ajax(request):
+    """Vista AJAX para gestionar asignaturas de un curso (asignar/desasignar)"""
+    if request.method != 'POST':
+        return JsonResponse({'success': False, 'error': 'Método no permitido'})
+    
+    # Verificar permisos
+    if not (hasattr(request.user, 'perfil') and 
+            request.user.perfil.tipo_usuario in ['director', 'administrador', 'profesor_jefe']):
+        return JsonResponse({'success': False, 'error': 'No tienes permisos para gestionar asignaturas'})
+    
+    try:
+        data = json.loads(request.body)
+        curso_id = data.get('curso_id')
+        asignatura_id = data.get('asignatura_id')
+        accion = data.get('accion')  # 'asignar' o 'desasignar'
+        
+        if not all([curso_id, asignatura_id, accion]):
+            return JsonResponse({'success': False, 'error': 'Datos incompletos'})
+        
+        curso = get_object_or_404(Curso, id=curso_id)
+        asignatura = get_object_or_404(Asignatura, id=asignatura_id)
+        
+        if accion == 'asignar':
+            curso.asignaturas.add(asignatura)
+            mensaje = f'Asignatura {asignatura.nombre} asignada al curso {curso.get_nivel_display()}{curso.paralelo}'
+        elif accion == 'desasignar':
+            curso.asignaturas.remove(asignatura)
+            mensaje = f'Asignatura {asignatura.nombre} removida del curso {curso.get_nivel_display()}{curso.paralelo}'
+        else:
+            return JsonResponse({'success': False, 'error': 'Acción no válida'})
+        
+        # Calcular estadísticas actualizadas
+        cursos_queryset = Curso.objects.filter(anio=timezone.now().year)
+        total_asignaturas_asignadas = sum(curso.asignaturas.count() for curso in cursos_queryset)
+        asignaturas_curso_actual = curso.asignaturas.count()
+        
+        return JsonResponse({
+            'success': True, 
+            'mensaje': mensaje,
+            'asignaturas_curso': asignaturas_curso_actual,
+            'total_asignaturas_asignadas': total_asignaturas_asignadas
+        })
+        
+    except json.JSONDecodeError:
+        return JsonResponse({'success': False, 'error': 'Error en el formato de datos'})
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': f'Error interno: {str(e)}'})
+
+@login_required
+def obtener_asignaturas_curso_ajax(request, curso_id):
+    """Vista AJAX para obtener las asignaturas de un curso específico"""
+    try:
+        curso = get_object_or_404(Curso, id=curso_id)
+        asignaturas_asignadas = curso.asignaturas.all()
+        asignaturas_disponibles = Asignatura.objects.exclude(id__in=asignaturas_asignadas.values_list('id', flat=True))
+        
+        data = {
+            'curso': {
+                'id': curso.id,
+                'nombre': f"{curso.get_nivel_display()}{curso.paralelo}",
+                'nivel_display': curso.get_nivel_display(),
+                'paralelo': curso.paralelo
+            },
+            'asignaturas_asignadas': [
+                {
+                    'id': asig.id,
+                    'nombre': asig.nombre,
+                    'codigo': asig.codigo_asignatura
+                } for asig in asignaturas_asignadas
+            ],
+            'asignaturas_disponibles': [
+                {
+                    'id': asig.id,
+                    'nombre': asig.nombre,
+                    'codigo': asig.codigo_asignatura
+                } for asig in asignaturas_disponibles
+            ]
+        }
+        
+        return JsonResponse({'success': True, 'data': data})
+        
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': f'Error: {str(e)}'})
+
+@login_required
+def gestionar_asignaturas_curso_ajax(request):
+    """Vista AJAX para gestionar asignaturas de un curso (asignar/desasignar)"""
+    if request.method != 'POST':
+        return JsonResponse({'success': False, 'error': 'Método no permitido'})
+    
+    # Verificar permisos
+    if not (hasattr(request.user, 'perfil') and 
+            request.user.perfil.tipo_usuario in ['director', 'administrador', 'profesor_jefe']):
+        return JsonResponse({'success': False, 'error': 'No tienes permisos para gestionar asignaturas'})
+    
+    try:
+        data = json.loads(request.body)
+        curso_id = data.get('curso_id')
+        asignatura_id = data.get('asignatura_id')
+        accion = data.get('accion')  # 'asignar' o 'desasignar'
+        
+        if not all([curso_id, asignatura_id, accion]):
+            return JsonResponse({'success': False, 'error': 'Datos incompletos'})
+        
+        curso = get_object_or_404(Curso, id=curso_id)
+        asignatura = get_object_or_404(Asignatura, id=asignatura_id)
+        
+        if accion == 'asignar':
+            curso.asignaturas.add(asignatura)
+            mensaje = f'Asignatura {asignatura.nombre} asignada al curso {curso.get_nivel_display()}{curso.paralelo}'
+        elif accion == 'desasignar':
+            curso.asignaturas.remove(asignatura)
+            mensaje = f'Asignatura {asignatura.nombre} removida del curso {curso.get_nivel_display()}{curso.paralelo}'
+        else:
+            return JsonResponse({'success': False, 'error': 'Acción no válida'})
+        
+        # Calcular estadísticas actualizadas
+        cursos_queryset = Curso.objects.filter(anio=timezone.now().year)
+        total_asignaturas_asignadas = sum(curso.asignaturas.count() for curso in cursos_queryset)
+        asignaturas_curso_actual = curso.asignaturas.count()
+        
+        return JsonResponse({
+            'success': True, 
+            'mensaje': mensaje,
+            'asignaturas_curso': asignaturas_curso_actual,
+            'total_asignaturas_asignadas': total_asignaturas_asignadas
+        })
+        
+    except json.JSONDecodeError:
+        return JsonResponse({'success': False, 'error': 'Error en el formato de datos'})
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': f'Error interno: {str(e)}'})
+
+@login_required
+def obtener_asignaturas_curso_ajax(request, curso_id):
+    """Vista AJAX para obtener las asignaturas de un curso específico"""
+    try:
+        curso = get_object_or_404(Curso, id=curso_id)
+        asignaturas_asignadas = curso.asignaturas.all()
+        asignaturas_disponibles = Asignatura.objects.exclude(id__in=asignaturas_asignadas.values_list('id', flat=True))
+        
+        data = {
+            'curso': {
+                'id': curso.id,
+                'nombre': f"{curso.get_nivel_display()}{curso.paralelo}",
+                'nivel_display': curso.get_nivel_display(),
+                'paralelo': curso.paralelo
+            },
+            'asignaturas_asignadas': [
+                {
+                    'id': asig.id,
+                    'nombre': asig.nombre,
+                    'codigo': asig.codigo_asignatura
+                } for asig in asignaturas_asignadas
+            ],
+            'asignaturas_disponibles': [
+                {
+                    'id': asig.id,
+                    'nombre': asig.nombre,
+                    'codigo': asig.codigo_asignatura
+                } for asig in asignaturas_disponibles
+            ]
+        }
+        
+        return JsonResponse({'success': True, 'data': data})
+        
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': f'Error: {str(e)}'})

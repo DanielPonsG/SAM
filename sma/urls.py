@@ -30,7 +30,9 @@ from smapp.views import (
     editar_evento, eliminar_evento, agregar_curso, editar_curso, eliminar_curso,
     agregar_asignatura, editar_asignatura, eliminar_asignatura, agregar_asignatura_completa,
     ver_horario_curso, api_horarios_cursos, editar_nota, eliminar_nota, agregar_nota_individual,
-    ver_asistencia_profesor
+    ver_asistencia_profesor,
+    # Nuevas vistas AJAX para gestión de asignaturas
+    gestionar_asignaturas_curso_ajax, obtener_asignaturas_curso_ajax
 )
 
 # Importar las vistas temporales
@@ -106,4 +108,8 @@ urlpatterns = [
     path('ajax/editar-horario/', ajax_editar_horario, name='ajax_editar_horario'),
     path('ajax/obtener-horario/', ajax_obtener_horario, name='ajax_obtener_horario'),
     path('ajax/eliminar-horario-nuevo/', ajax_eliminar_horario_nuevo, name='ajax_eliminar_horario_nuevo'),
+    
+    # Gestión de asignaturas por curso (AJAX)
+    path('ajax/gestionar-asignaturas-curso/', gestionar_asignaturas_curso_ajax, name='gestionar_asignaturas_curso_ajax'),
+    path('ajax/obtener-asignaturas-curso/<int:curso_id>/', obtener_asignaturas_curso_ajax, name='obtener_asignaturas_curso_ajax'),
 ]
