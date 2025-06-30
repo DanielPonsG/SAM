@@ -14,88 +14,104 @@
             <h1 class="mb-1">
               <i class="fas fa-edit text-primary me-2"></i>Editar Evento
             </h1>
-            <p class="text-muted mb-0">Modifica la información del evento seleccionado</p>
+            <p class="text-muted mb-0">Modifica la información del evento: <strong>{{ evento.titulo }}</strong></p>
           </div>
         </div>
       </div>
     </div>
 
+    <!-- Mensajes -->
+    {% if messages %}
+      {% for message in messages %}
+        <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+          <i class="fas fa-{% if message.tags == 'success' %}check-circle{% elif message.tags == 'error' %}exclamation-triangle{% else %}info-circle{% endif %} me-2"></i>
+          {{ message }}
+          <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+      {% endfor %}
+    {% endif %}
+
     <div class="row justify-content-center">
       <div class="col-lg-8">
-        <div class="card border-0 shadow-lg">
-          <div class="card-header bg-gradient-primary text-white">
-            <div class="d-flex align-items-center">
-              <i class="fas fa-calendar-edit fa-lg me-2"></i>
-              <h4 class="mb-0">{{ evento.titulo }}</h4>
-            </div>
+        <div class="card shadow-sm">
+          <div class="card-header bg-warning text-dark">
+            <h5 class="mb-0">
+              <i class="fas fa-calendar-edit me-2"></i>Editando: {{ evento.titulo }}
+            </h5>
           </div>
           
           <div class="card-body p-4">
-            <form method="post" class="row g-3" id="editarEventoForm">
+            <form method="post" id="editarEventoForm">
               {% csrf_token %}
               
               <!-- Información básica -->
-              <div class="col-md-6">
-                <label class="form-label fw-bold">
-                  <i class="fas fa-heading me-1 text-primary"></i>Título del evento *
-                </label>
-                <input type="text" name="titulo" class="form-control" value="{{ evento.titulo }}" required>
-              </div>
-              
-              <div class="col-md-3">
-                <label class="form-label fw-bold">
-                  <i class="fas fa-calendar me-1 text-primary"></i>Fecha *
-                </label>
-                <input type="date" name="fecha" class="form-control" value="{{ evento.fecha|date:'Y-m-d' }}" required>
-              </div>
-              
-              <div class="col-md-3">
-                <label class="form-label fw-bold">
-                  <i class="fas fa-flag me-1 text-warning"></i>Prioridad
-                </label>
-                <select name="prioridad" class="form-select">
-                  <option value="baja" {% if evento.prioridad == 'baja' %}selected{% endif %}>Baja</option>
-                  <option value="media" {% if evento.prioridad == 'media' %}selected{% endif %}>Media</option>
-                  <option value="alta" {% if evento.prioridad == 'alta' %}selected{% endif %}>Alta</option>
-                </select>
+              <div class="row mb-3">
+                <div class="col-md-8">
+                  <label class="form-label fw-bold">
+                    <i class="fas fa-heading me-1 text-primary"></i>Título del evento *
+                  </label>
+                  <input type="text" name="titulo" class="form-control" value="{{ evento.titulo }}" required>
+                </div>
+                
+                <div class="col-md-4">
+                  <label class="form-label fw-bold">
+                    <i class="fas fa-calendar me-1 text-primary"></i>Fecha *
+                  </label>
+                  <input type="date" name="fecha" class="form-control" value="{{ evento.fecha|date:'Y-m-d' }}" required>
+                </div>
               </div>
               
               <!-- Horas -->
-              <div class="col-md-6">
-                <label class="form-label fw-bold">
-                  <i class="fas fa-clock me-1 text-primary"></i>Hora inicio
-                </label>
-                <input type="time" name="hora_inicio" id="hora_inicio" class="form-control" value="{{ evento.hora_inicio|time:'H:i' }}">
-                <div class="invalid-feedback" id="error_hora_inicio"></div>
-                <small class="form-text text-muted">Opcional</small>
+              <div class="row mb-3">
+                <div class="col-md-6">
+                  <label class="form-label fw-bold">
+                    <i class="fas fa-clock me-1 text-primary"></i>Hora inicio
+                  </label>
+                  <input type="time" name="hora_inicio" id="hora_inicio" class="form-control" value="{{ evento.hora_inicio|time:'H:i' }}">
+                  <div class="invalid-feedback" id="error_hora_inicio"></div>
+                  <small class="form-text text-muted">Opcional</small>
+                </div>
+                
+                <div class="col-md-6">
+                  <label class="form-label fw-bold">
+                    <i class="fas fa-clock me-1 text-primary"></i>Hora fin
+                  </label>
+                  <input type="time" name="hora_fin" id="hora_fin" class="form-control" value="{{ evento.hora_fin|time:'H:i' }}">
+                  <div class="invalid-feedback" id="error_hora_fin"></div>
+                  <small class="form-text text-muted">Debe ser mayor que hora inicio</small>
+                </div>
               </div>
               
-              <div class="col-md-6">
-                <label class="form-label fw-bold">
-                  <i class="fas fa-clock me-1 text-primary"></i>Hora fin
-                </label>
-                <input type="time" name="hora_fin" id="hora_fin" class="form-control" value="{{ evento.hora_fin|time:'H:i' }}">
-                <div class="invalid-feedback" id="error_hora_fin"></div>
-                <small class="form-text text-muted">Debe ser mayor que hora inicio</small>
-              </div>
-              
-              <!-- Tipo de evento -->
-              <div class="col-md-6">
-                <label class="form-label fw-bold">
-                  <i class="fas fa-tag me-1 text-primary"></i>Tipo de evento
-                </label>
-                <select name="tipo_evento" class="form-select">
-                  <option value="general" {% if evento.tipo_evento == 'general' %}selected{% endif %}>Evento General</option>
-                  <option value="evaluacion" {% if evento.tipo_evento == 'evaluacion' %}selected{% endif %}>Evaluación/Prueba</option>
-                  <option value="reunion" {% if evento.tipo_evento == 'reunion' %}selected{% endif %}>Reunión</option>
-                  <option value="actividad" {% if evento.tipo_evento == 'actividad' %}selected{% endif %}>Actividad Escolar</option>
-                  <option value="administrativo" {% if evento.tipo_evento == 'administrativo' %}selected{% endif %}>Administrativo</option>
-                  <option value="otro" {% if evento.tipo_evento == 'otro' %}selected{% endif %}>Otro</option>
-                </select>
+              <!-- Tipo y prioridad -->
+              <div class="row mb-3">
+                <div class="col-md-6">
+                  <label class="form-label fw-bold">
+                    <i class="fas fa-tag me-1 text-primary"></i>Tipo de evento
+                  </label>
+                  <select name="tipo_evento" class="form-select">
+                    <option value="general" {% if evento.tipo_evento == 'general' %}selected{% endif %}>Evento General</option>
+                    <option value="evaluacion" {% if evento.tipo_evento == 'evaluacion' %}selected{% endif %}>Evaluación/Prueba</option>
+                    <option value="reunion" {% if evento.tipo_evento == 'reunion' %}selected{% endif %}>Reunión</option>
+                    <option value="actividad" {% if evento.tipo_evento == 'actividad' %}selected{% endif %}>Actividad Escolar</option>
+                    <option value="administrativo" {% if evento.tipo_evento == 'administrativo' %}selected{% endif %}>Administrativo</option>
+                    <option value="otro" {% if evento.tipo_evento == 'otro' %}selected{% endif %}>Otro</option>
+                  </select>
+                </div>
+                
+                <div class="col-md-6">
+                  <label class="form-label fw-bold">
+                    <i class="fas fa-flag me-1 text-warning"></i>Prioridad
+                  </label>
+                  <select name="prioridad" class="form-select">
+                    <option value="baja" {% if evento.prioridad == 'baja' %}selected{% endif %}>Baja</option>
+                    <option value="media" {% if evento.prioridad == 'media' %}selected{% endif %}>Media</option>
+                    <option value="alta" {% if evento.prioridad == 'alta' %}selected{% endif %}>Alta</option>
+                  </select>
+                </div>
               </div>
               
               <!-- Descripción -->
-              <div class="col-12">
+              <div class="mb-3">
                 <label class="form-label fw-bold">
                   <i class="fas fa-align-left me-1 text-primary"></i>Descripción
                 </label>
@@ -103,7 +119,7 @@
               </div>
               
               <!-- Dirigido a -->
-              <div class="col-12">
+              <div class="mb-4">
                 <label class="form-label fw-bold">
                   <i class="fas fa-users me-1 text-primary"></i>Dirigido a
                 </label>
@@ -133,20 +149,13 @@
                   <div class="row">
                     {% for curso in cursos %}
                     <div class="col-md-6 mb-2">
-                      <div class="form-check p-2 border rounded">
+                      <div class="form-check">
                         <input class="form-check-input" type="checkbox" name="cursos_especificos" value="{{ curso.id }}" id="curso_{{ curso.id }}" {% if curso in cursos_seleccionados %}checked{% endif %}>
-                        <label class="form-check-label w-100" for="curso_{{ curso.id }}" style="cursor: pointer;">
-                          <div class="d-flex align-items-center">
-                            <span class="badge bg-secondary me-2">{{ curso.get_nivel_display }}</span>
-                            <div class="flex-grow-1">
-                              <div class="fw-bold">{{ curso.paralelo }}</div>
-                              {% if curso.profesor_jefe %}
-                              <small class="text-muted">Prof. {{ curso.profesor_jefe.primer_nombre }} {{ curso.profesor_jefe.apellido_paterno }}</small>
-                              {% else %}
-                              <small class="text-muted">Sin profesor jefe</small>
-                              {% endif %}
-                            </div>
-                          </div>
+                        <label class="form-check-label" for="curso_{{ curso.id }}">
+                          <strong>{{ curso.get_nivel_display }}{{ curso.paralelo }}</strong>
+                          {% if curso.profesor_jefe %}
+                            <br><small class="text-muted">Prof. {{ curso.profesor_jefe.primer_nombre }} {{ curso.profesor_jefe.apellido_paterno }}</small>
+                          {% endif %}
                         </label>
                       </div>
                     </div>
@@ -156,16 +165,42 @@
                 {% endif %}
               </div>
               
-              <!-- Botones de acción -->
-              <div class="col-12">
-                <div class="d-flex gap-2 justify-content-end mt-4">
-                  <a href="{% url 'calendario' %}" class="btn btn-light border">
-                    <i class="fas fa-times me-1"></i>Cancelar
-                  </a>
-                  <button type="submit" class="btn btn-success">
-                    <i class="fas fa-save me-1"></i>Guardar Cambios
-                  </button>
+              <!-- Información del responsable -->
+              <div class="alert alert-info">
+                <i class="fas fa-info-circle me-2"></i>
+                <strong>Responsable original:</strong> 
+                {% if evento.creado_por %}
+                  {{ evento.creado_por.first_name|default:evento.creado_por.username }}
+                {% else %}
+                  Sistema
+                {% endif %}
+                <br><small>Creado el {{ evento.creado_en|date:"d/m/Y H:i" }}</small>
+              </div>
+              
+              <!-- Información del responsable original -->
+              <div class="mb-4">
+                <div class="alert alert-warning">
+                  <i class="fas fa-user me-2"></i>
+                  <strong>Responsable original:</strong> 
+                  {% if evento.creado_por %}
+                    {{ evento.creado_por.first_name|default:evento.creado_por.username }}
+                  {% else %}
+                    Sistema
+                  {% endif %}
+                  <small class="d-block">
+                    Creado el {{ evento.creado_en|date:"d/m/Y H:i" }}
+                  </small>
                 </div>
+              </div>
+
+              <!-- Botones de acción -->
+              <div class="d-flex gap-2 justify-content-end">
+                <a href="{% url 'calendario' %}" class="btn btn-light border">
+                  <i class="fas fa-times me-1"></i>Cancelar
+                </a>
+                <button type="submit" class="btn btn-success">
+                  <i class="fas fa-save me-1"></i>Guardar Cambios
+                </button>
               </div>
             </form>
           </div>
@@ -176,34 +211,30 @@
 </div>
 
 <style>
-.bg-gradient-primary {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
-}
-
-.card {
-  transition: all 0.3s ease;
-}
-
 .form-control:focus,
-.form-select:focus,
-.form-control:focus-visible {
-  border-color: #667eea;
-  box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+.form-select:focus {
+  border-color: #198754;
+  box-shadow: 0 0 0 0.2rem rgba(25, 135, 84, 0.15);
 }
 
 .btn-success {
-  background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
-  border: none;
+  background: #198754;
+  border-color: #198754;
 }
 
 .btn-success:hover {
-  background: linear-gradient(135deg, #218838 0%, #1fa188 100%);
+  background: #157347;
+  border-color: #146c43;
   transform: translateY(-1px);
-  box-shadow: 0 4px 8px rgba(0,0,0,0.1);
 }
 
-.form-label {
-  color: #495057;
+.form-check:hover .form-check-label {
+  color: #198754;
+}
+
+.card {
+  border: 1px solid #dee2e6;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
 }
 </style>
 
@@ -215,10 +246,6 @@ document.addEventListener('DOMContentLoaded', function() {
     const horaFin = document.getElementById('hora_fin');
     const errorInicio = document.getElementById('error_hora_inicio');
     const errorFin = document.getElementById('error_hora_fin');
-    
-    if (!horaInicio || !horaFin || !errorInicio || !errorFin) {
-      return true;
-    }
     
     // Limpiar errores previos
     horaInicio.classList.remove('is-invalid');
@@ -240,24 +267,21 @@ document.addEventListener('DOMContentLoaded', function() {
   }
   
   // Agregar eventos de validación
-  const horaInicioInput = document.getElementById('hora_inicio');
-  const horaFinInput = document.getElementById('hora_fin');
-  
-  if (horaInicioInput && horaFinInput) {
-    horaInicioInput.addEventListener('change', validarHoras);
-    horaFinInput.addEventListener('change', validarHoras);
-  }
+  document.getElementById('hora_inicio').addEventListener('change', validarHoras);
+  document.getElementById('hora_fin').addEventListener('change', validarHoras);
   
   // Mostrar/ocultar selector de cursos específicos
   document.querySelectorAll('input[name="dirigido_a"]').forEach(radio => {
     radio.addEventListener('change', function() {
       const cursosDiv = document.getElementById('cursosEspecificos');
       
-      if (this.value === 'cursos_especificos') {
-        cursosDiv.style.display = 'block';
-      } else {
-        cursosDiv.style.display = 'none';
-        // No desmarcar checkboxes al cambiar, mantener selección
+      if (cursosDiv) {
+        if (this.value === 'cursos_especificos') {
+          cursosDiv.style.display = 'block';
+        } else {
+          cursosDiv.style.display = 'none';
+          // No desmarcar checkboxes al cambiar, mantener selección
+        }
       }
     });
   });
@@ -265,14 +289,9 @@ document.addEventListener('DOMContentLoaded', function() {
   // Validar cursos específicos
   function validarCursosEspecificos() {
     const dirigidoEspecificos = document.getElementById('dirigido_especificos');
-    
-    if (!dirigidoEspecificos) {
-      return true;
-    }
-    
     const checkboxes = document.querySelectorAll('input[name="cursos_especificos"]:checked');
     
-    if (dirigidoEspecificos.checked && checkboxes.length === 0) {
+    if (dirigidoEspecificos && dirigidoEspecificos.checked && checkboxes.length === 0) {
       alert('Debes seleccionar al menos un curso específico');
       document.getElementById('cursosEspecificos').scrollIntoView({ behavior: 'smooth' });
       return false;
@@ -306,18 +325,19 @@ document.addEventListener('DOMContentLoaded', function() {
       e.preventDefault();
       return false;
     }
+    
+    // Mostrar indicador de carga
+    const submitBtn = this.querySelector('button[type="submit"]');
+    const originalText = submitBtn.innerHTML;
+    submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Guardando cambios...';
+    submitBtn.disabled = true;
+    
+    // Permitir que el formulario se envíe normalmente
+    setTimeout(() => {
+      submitBtn.innerHTML = originalText;
+      submitBtn.disabled = false;
+    }, 3000);
   });
-  
-  // Animación de entrada
-  const card = document.querySelector('.card');
-  card.style.opacity = '0';
-  card.style.transform = 'translateY(20px)';
-  
-  setTimeout(() => {
-    card.style.transition = 'all 0.6s ease';
-    card.style.opacity = '1';
-    card.style.transform = 'translateY(0)';
-  }, 100);
 });
 </script>
 {% endblock %}

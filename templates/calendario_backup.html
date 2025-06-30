@@ -138,7 +138,6 @@
                       {% endif %}
                       <small class="text-info">
                         <i class="fas fa-user me-1"></i>
-                        <strong>Responsable:</strong>
                         {% if evento.creado_por %}
                           {{ evento.creado_por.first_name|default:evento.creado_por.username }}
                         {% else %}
@@ -153,9 +152,9 @@
                       </button>
                       <ul class="dropdown-menu">
                         <li>
-                          <a class="dropdown-item" href="{% url 'editar_evento' evento.id %}">
+                          <button class="dropdown-item" onclick="editarEvento({{ evento.id }})">
                             <i class="fas fa-edit me-2"></i>Editar
-                          </a>
+                          </button>
                         </li>
                         <li>
                           <button class="dropdown-item text-danger" onclick="eliminarEvento({{ evento.id }}, '{{ evento.titulo }}')">
@@ -177,6 +176,9 @@
                     <i class="fas fa-plus me-1"></i>Crear Primer Evento
                   </button>
                 {% endif %}
+              </div>
+            {% endif %}
+              </div>
               </div>
             {% endif %}
           </div>
@@ -300,7 +302,40 @@
     </div>
   </div>
 </div>
+
+<!-- Modal para editar evento -->
+<div class="modal fade" id="modalEditarEvento" tabindex="-1" aria-labelledby="modalEditarEventoLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header bg-warning text-dark">
+        <h5 class="modal-title" id="modalEditarEventoLabel">
+          <i class="fas fa-edit me-2"></i>Editar Evento
+        </h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <form id="formEditarEvento" method="post">
+        {% csrf_token %}
+        <input type="hidden" name="evento_id" id="evento_id">
+        <div class="modal-body">
+          <div id="contenidoEditarEvento">
+            <!-- Se carga dinámicamente -->
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+            <i class="fas fa-times me-1"></i>Cancelar
+          </button>
+          <button type="submit" class="btn btn-warning">
+            <i class="fas fa-save me-1"></i>Guardar Cambios
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
 {% endif %}
+  </div>
+</div>
 
 <!-- FullCalendar CSS y JS -->
 <link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/main.min.css" rel="stylesheet">
@@ -308,118 +343,82 @@
 <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/locales/es.min.js"></script>
 
 <style>
-.border-left-primary {
-  border-left: 0.25rem solid #4e73df !important;
-}
-
-.border-left-success {
-  border-left: 0.25rem solid #1cc88a !important;
-}
-
-.border-left-warning {
-  border-left: 0.25rem solid #f6c23e !important;
-}
-
-.border-left-info {
-  border-left: 0.25rem solid #36b9cc !important;
-}
-
 #calendar {
-  background: #fff;
-  border-radius: 0.35rem;
-  padding: 1rem;
+  background: transparent;
+  min-height: 500px;
 }
 
-.fc-toolbar {
-  margin-bottom: 1rem !important;
+.fc {
+  background: #fff;
+  border: none;
+  border-radius: 8px;
 }
 
 .fc-toolbar-title {
-  font-size: 1.2rem !important;
+  font-size: 1.2em !important;
   font-weight: 600 !important;
-  color: #5a5c69 !important;
+  color: #495057 !important;
 }
 
 .fc-button {
-  background: #4e73df !important;
-  border: 1px solid #4e73df !important;
-  color: #fff !important;
-  border-radius: 0.35rem !important;
-  font-size: 0.8rem !important;
-  font-weight: 400 !important;
-  padding: 0.375rem 0.75rem !important;
+  background: #fff !important;
+  border: 1px solid #dee2e6 !important;
+  color: #495057 !important;
+  border-radius: 6px !important;
+  font-weight: 500 !important;
+  padding: 0.4em 0.8em !important;
 }
 
 .fc-button:hover {
-  background: #2e59d9 !important;
-  border-color: #2653d4 !important;
+  background: #e9ecef !important;
+  border-color: #adb5bd !important;
 }
 
-.fc-button:disabled {
-  background: #858796 !important;
-  border-color: #858796 !important;
+.fc-button-active {
+  background: #007bff !important;
+  border-color: #007bff !important;
+  color: #fff !important;
 }
 
 .fc-event {
-  border: none !important;
-  padding: 2px 4px !important;
-  font-size: 0.8rem !important;
+  padding: 4px 8px !important;
+  font-size: 0.85rem !important;
   font-weight: 500 !important;
-  border-radius: 0.25rem !important;
+  border-radius: 4px !important;
   cursor: pointer !important;
+  opacity: 0.9 !important;
 }
 
 .fc-event:hover {
-  filter: brightness(1.1) !important;
+  opacity: 1 !important;
 }
 
 .fc-day-today {
-  background-color: rgba(78, 115, 223, 0.1) !important;
+  background-color: rgba(0, 123, 255, 0.1) !important;
 }
 
-.fc-daygrid-day-number {
-  color: #5a5c69 !important;
-  font-weight: 500 !important;
+.card {
+  border: 1px solid #dee2e6;
+  transition: all 0.2s ease;
 }
 
-.fc-col-header-cell {
-  background: #f8f9fc !important;
-  font-weight: 600 !important;
-  color: #5a5c69 !important;
-  text-transform: uppercase;
-  font-size: 0.8rem !important;
+.card:hover {
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
 }
 
-.text-xs {
-  font-size: 0.7rem !important;
-}
-
-.font-weight-bold {
-  font-weight: 700 !important;
-}
-
-.text-uppercase {
-  text-transform: uppercase !important;
-}
-
-.text-gray-800 {
-  color: #5a5c69 !important;
-}
-
-.text-gray-300 {
-  color: #dddfeb !important;
+.badge {
+  font-size: 0.9rem;
+  padding: 0.4em 0.6em;
 }
 </style>
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-  console.log('🔧 Inicializando calendario simplificado...');
-  
   // Datos de eventos desde Django
   const eventosData = {{ eventos_json|safe|default:"[]" }};
   const calendarEl = document.getElementById('calendar');
   
-  console.log('📅 Eventos cargados:', eventosData.length);
+  console.log('📅 Inicializando calendario con', eventosData.length, 'eventos');
   
   if (!calendarEl) {
     console.error('❌ Elemento #calendar no encontrado');
@@ -430,7 +429,7 @@ document.addEventListener('DOMContentLoaded', function() {
   const calendar = new FullCalendar.Calendar(calendarEl, {
     locale: 'es',
     initialView: 'dayGridMonth',
-    height: 500,
+    height: 'auto',
     headerToolbar: {
       left: 'prev,next today',
       center: 'title',
@@ -444,193 +443,58 @@ document.addEventListener('DOMContentLoaded', function() {
     },
     events: eventosData,
     eventClick: function(info) {
-      console.log('Evento clickeado:', info.event.title);
-      mostrarDetalleEvento(info.event);
+      // Mostrar detalles del evento en modal o redireccionar
+      const evento = info.event;
+      const detalles = `
+        Título: ${evento.title}
+        Fecha: ${evento.start.toLocaleDateString('es-ES')}
+        ${evento.extendedProps.description ? `Descripción: ${evento.extendedProps.description}` : ''}
+      `;
+      
+      if (confirm(detalles + '\n\n¿Deseas editar este evento?')) {
+        {% if puede_crear_eventos %}
+        window.location.href = `/eventos/editar/${evento.id}/`;
+        {% endif %}
+      }
     },
     dateClick: function(info) {
       {% if puede_crear_eventos %}
-      console.log('Fecha clickeada:', info.dateStr);
-      document.querySelector('#modalAgregarEvento input[name="fecha"]').value = info.dateStr;
-      const modal = new bootstrap.Modal(document.getElementById('modalAgregarEvento'));
-      modal.show();
+      // Redireccionar a agregar evento con fecha preseleccionada
+      const fecha = info.dateStr;
+      window.location.href = `{% url 'agregar_evento' %}?fecha=${fecha}`;
       {% endif %}
     },
     dayMaxEvents: 3,
-    moreLinkClick: 'popover',
-    eventDisplay: 'block'
+    moreLinkClick: 'listWeek',
+    displayEventTime: true,
+    eventTimeFormat: {
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: false
+    }
   });
   
   calendar.render();
-  console.log('✅ Calendario renderizado correctamente');
-  
-  {% if puede_crear_eventos %}
-  // Manejar envío del formulario de agregar evento
-  const formAgregar = document.getElementById('formAgregarEvento');
-  if (formAgregar) {
-    formAgregar.addEventListener('submit', function(e) {
-      e.preventDefault();
-      
-      const titulo = this.querySelector('[name="titulo"]').value.trim();
-      const fecha = this.querySelector('[name="fecha"]').value;
-      
-      if (!titulo || !fecha) {
-        mostrarAlerta('error', 'Por favor completa el título y la fecha del evento.');
-        return;
-      }
-      
-      // Validar horas si están presentes
-      const horaInicio = this.querySelector('[name="hora_inicio"]').value;
-      const horaFin = this.querySelector('[name="hora_fin"]').value;
-      
-      if (horaInicio && horaFin && horaInicio >= horaFin) {
-        mostrarAlerta('error', 'La hora de inicio debe ser menor que la hora de fin.');
-        return;
-      }
-      
-      // Validar cursos específicos
-      const dirigidoEspecificos = document.getElementById('dirigido_especificos');
-      if (dirigidoEspecificos && dirigidoEspecificos.checked) {
-        const cursosSeleccionados = document.querySelectorAll('input[name="cursos_especificos"]:checked');
-        if (cursosSeleccionados.length === 0) {
-          mostrarAlerta('error', 'Debes seleccionar al menos un curso específico.');
-          return;
-        }
-      }
-      
-      const formData = new FormData(this);
-      const submitBtn = this.querySelector('button[type="submit"]');
-      const btnText = submitBtn.innerHTML;
-      
-      submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Creando...';
-      submitBtn.disabled = true;
-      
-      fetch(window.location.href, {
-        method: 'POST',
-        body: formData,
-        headers: {
-          'X-Requested-With': 'XMLHttpRequest',
-        }
-      })
-      .then(response => response.json())
-      .then(data => {
-        if (data.success) {
-          mostrarAlerta('success', 'Evento creado exitosamente');
-          
-          // Cerrar modal
-          const modal = bootstrap.Modal.getInstance(document.getElementById('modalAgregarEvento'));
-          modal.hide();
-          
-          // Recargar página después de un momento
-          setTimeout(() => {
-            window.location.reload();
-          }, 1500);
-        } else {
-          mostrarAlerta('error', data.error || 'Error al crear el evento');
-        }
-      })
-      .catch(error => {
-        console.error('Error:', error);
-        mostrarAlerta('error', 'Error de conexión. Inténtalo de nuevo.');
-      })
-      .finally(() => {
-        submitBtn.innerHTML = btnText;
-        submitBtn.disabled = false;
-      });
-    });
-  }
-  
-  // Mostrar/ocultar cursos específicos
-  document.querySelectorAll('input[name="dirigido_a"]').forEach(radio => {
-    radio.addEventListener('change', function() {
-      const cursosDiv = document.getElementById('cursosEspecificos');
-      if (cursosDiv) {
-        if (this.value === 'cursos_especificos') {
-          cursosDiv.style.display = 'block';
-        } else {
-          cursosDiv.style.display = 'none';
-          // Desmarcar checkboxes
-          cursosDiv.querySelectorAll('input[type="checkbox"]').forEach(cb => cb.checked = false);
-        }
-      }
-    });
-  });
-  
-  // Limpiar formulario al cerrar modal
-  document.getElementById('modalAgregarEvento').addEventListener('hidden.bs.modal', function() {
-    const form = document.getElementById('formAgregarEvento');
-    if (form) {
-      form.reset();
-      document.getElementById('dirigido_todos').checked = true;
-      const cursosDiv = document.getElementById('cursosEspecificos');
-      if (cursosDiv) {
-        cursosDiv.style.display = 'none';
-      }
-    }
-  });
-  {% endif %}
+  console.log('✅ Calendario renderizado exitosamente');
 });
 
-// Función para mostrar alertas
-function mostrarAlerta(tipo, mensaje) {
-  const tipoClase = tipo === 'error' ? 'danger' : tipo;
-  const icono = tipo === 'success' ? 'check-circle' : tipo === 'error' ? 'exclamation-triangle' : 'info-circle';
-  
-  const alertaHtml = `
-    <div class="alert alert-${tipoClase} alert-dismissible fade show position-fixed" style="top: 80px; right: 20px; z-index: 9999; min-width: 300px;">
-      <i class="fas fa-${icono} me-2"></i>
-      ${mensaje}
-      <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-    </div>
-  `;
-  
-  document.body.insertAdjacentHTML('beforeend', alertaHtml);
-  
-  // Auto-remover después de 5 segundos
-  setTimeout(() => {
-    const alertas = document.querySelectorAll('.alert');
-    if (alertas.length > 0) {
-      alertas[alertas.length - 1].remove();
-    }
-  }, 5000);
-}
-
-// Función para mostrar detalle del evento
-function mostrarDetalleEvento(evento) {
-  const mensaje = `
-    <strong>${evento.title}</strong><br>
-    <small class="text-muted">Fecha: ${evento.start}</small><br>
-    ${evento.extendedProps && evento.extendedProps.description ? `<p class="mt-2">${evento.extendedProps.description}</p>` : ''}
-  `;
-  
-  mostrarAlerta('info', mensaje);
-}
-
-{% if puede_crear_eventos %}
 // Función para eliminar evento
 function eliminarEvento(eventoId, titulo) {
-  if (confirm(`¿Estás seguro de que deseas eliminar el evento "${titulo}"?`)) {
-    fetch(`/eventos/eliminar/${eventoId}/`, {
-      method: 'POST',
-      headers: {
-        'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
-        'X-Requested-With': 'XMLHttpRequest',
-      }
-    })
-    .then(response => response.json())
-    .then(data => {
-      if (data.success) {
-        mostrarAlerta('success', 'Evento eliminado correctamente');
-        setTimeout(() => window.location.reload(), 1500);
-      } else {
-        mostrarAlerta('error', data.error || 'Error al eliminar el evento');
-      }
-    })
-    .catch(error => {
-      console.error('Error:', error);
-      mostrarAlerta('error', 'Error de conexión');
-    });
+  if (confirm(`¿Estás seguro de eliminar el evento "${titulo}"?\n\nEsta acción no se puede deshacer.`)) {
+    // Crear formulario para enviar DELETE
+    const form = document.createElement('form');
+    form.method = 'POST';
+    form.action = `/eventos/eliminar/${eventoId}/`;
+    
+    const csrfToken = document.createElement('input');
+    csrfToken.type = 'hidden';
+    csrfToken.name = 'csrfmiddlewaretoken';
+    csrfToken.value = '{{ csrf_token }}';
+    
+    form.appendChild(csrfToken);
+    document.body.appendChild(form);
+    form.submit();
   }
 }
-{% endif %}
 </script>
 {% endblock %}

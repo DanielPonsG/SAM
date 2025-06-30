@@ -1,0 +1,320 @@
+{% extends "index_master.html" %}
+
+{% block content %}
+<div class="right_col" role="main">
+  <div class="container-fluid">
+    <!-- Header simplificado -->
+    <div class="row mb-4">
+      <div class="col-12">
+        <div class="d-flex align-items-center justify-content-between">
+          <div>
+            <h1 class="mb-1">
+              <i class="fas fa-calendar-alt text-primary me-2"></i>Calendario Escolar
+            </h1>
+            <p class="text-muted mb-0">Gestiona eventos y fechas importantes</p>
+          </div>
+          {% if puede_crear_eventos %}
+          <a href="{% url 'agregar_evento' %}" class="btn btn-primary">
+            <i class="fas fa-plus me-2"></i>Nuevo Evento
+          </a>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+
+    <!-- Estadísticas rápidas -->
+    <div class="row mb-4">
+      <div class="col-md-3">
+        <div class="card border-primary text-center">
+          <div class="card-body py-3">
+            <i class="fas fa-calendar-day fa-2x text-primary mb-2"></i>
+            <h4 class="mb-0 text-primary">{{ eventos.count }}</h4>
+            <small class="text-muted">Eventos Totales</small>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-3">
+        <div class="card border-success text-center">
+          <div class="card-body py-3">
+            <i class="fas fa-clock fa-2x text-success mb-2"></i>
+            <h4 class="mb-0 text-success">{{ eventos_hoy.count|default:0 }}</h4>
+            <small class="text-muted">Eventos Hoy</small>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-3">
+        <div class="card border-warning text-center">
+          <div class="card-body py-3">
+            <i class="fas fa-calendar-week fa-2x text-warning mb-2"></i>
+            <h4 class="mb-0 text-warning">{{ eventos_proximos.count|default:0 }}</h4>
+            <small class="text-muted">Esta Semana</small>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-3">
+        <div class="card border-info text-center">
+          <div class="card-body py-3">
+            <i class="fas fa-user-tie fa-2x text-info mb-2"></i>
+            <h4 class="mb-0 text-info">{{ request.user.first_name|default:request.user.username }}</h4>
+            <small class="text-muted">Usuario Actual</small>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Calendario principal -->
+    <div class="row">
+      <div class="col-lg-8">
+        <div class="card shadow-sm">
+          <div class="card-header bg-light">
+            <h5 class="mb-0">
+              <i class="fas fa-calendar me-2"></i>Vista de Calendario
+            </h5>
+          </div>
+          <div class="card-body">
+            <div id="calendar"></div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Panel lateral con próximos eventos -->
+      <div class="col-lg-4">
+        <div class="card shadow-sm">
+          <div class="card-header bg-light">
+            <h5 class="mb-0">
+              <i class="fas fa-list me-2"></i>Próximos Eventos
+            </h5>
+          </div>
+          <div class="card-body p-0">
+            {% if eventos_proximos %}
+              {% for evento in eventos_proximos %}
+                <div class="p-3 border-bottom">
+                  <div class="d-flex align-items-start">
+                    <div class="me-3">
+                      <div class="badge" style="background-color: {{ evento.color_por_tipo }};">
+                        {{ evento.fecha.day }}
+                      </div>
+                      <small class="text-muted d-block text-center">
+                        {{ evento.fecha|date:"M" }}
+                      </small>
+                    </div>
+                    <div class="flex-grow-1">
+                      <h6 class="mb-1">{{ evento.titulo }}</h6>
+                      <small class="text-muted">
+                        <i class="fas fa-clock me-1"></i>
+                        {% if evento.hora_inicio %}
+                          {{ evento.hora_inicio|time:"H:i" }}
+                          {% if evento.hora_fin %} - {{ evento.hora_fin|time:"H:i" }}{% endif %}
+                        {% else %}
+                          Todo el día
+                        {% endif %}
+                      </small>
+                      {% if evento.descripcion %}
+                        <p class="small text-muted mb-1 mt-1">{{ evento.descripcion|truncatewords:15 }}</p>
+                      {% endif %}
+                      <small class="text-muted">
+                        <i class="fas fa-user me-1"></i>
+                        {% if evento.creado_por %}
+                          {{ evento.creado_por.first_name|default:evento.creado_por.username }}
+                        {% else %}
+                          Sistema
+                        {% endif %}
+                      </small>
+                    </div>
+                    {% if puede_crear_eventos %}
+                    <div class="dropdown">
+                      <button class="btn btn-sm btn-outline-secondary dropdown-toggle" data-bs-toggle="dropdown">
+                        <i class="fas fa-ellipsis-v"></i>
+                      </button>
+                      <ul class="dropdown-menu">
+                        <li><a class="dropdown-item" href="{% url 'editar_evento' evento.id %}">
+                          <i class="fas fa-edit me-2"></i>Editar
+                        </a></li>
+                        <li><a class="dropdown-item text-danger" href="#" onclick="eliminarEvento({{ evento.id }}, '{{ evento.titulo }}')">
+                          <i class="fas fa-trash me-2"></i>Eliminar
+                        </a></li>
+                      </ul>
+                    </div>
+                    {% endif %}
+                  </div>
+                </div>
+              {% endfor %}
+            {% else %}
+              <div class="text-center py-4">
+                <i class="fas fa-calendar-times fa-3x text-muted mb-3"></i>
+                <p class="text-muted">No hay eventos próximos</p>
+                {% if puede_crear_eventos %}
+                  <a href="{% url 'agregar_evento' %}" class="btn btn-primary btn-sm">
+                    <i class="fas fa-plus me-1"></i>Crear Primer Evento
+                  </a>
+                {% endif %}
+              </div>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- FullCalendar CSS y JS -->
+<link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/main.min.css" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/main.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/locales/es.min.js"></script>
+
+<style>
+#calendar {
+  background: transparent;
+  min-height: 500px;
+}
+
+.fc {
+  background: #fff;
+  border: none;
+  border-radius: 8px;
+}
+
+.fc-toolbar-title {
+  font-size: 1.2em !important;
+  font-weight: 600 !important;
+  color: #495057 !important;
+}
+
+.fc-button {
+  background: #fff !important;
+  border: 1px solid #dee2e6 !important;
+  color: #495057 !important;
+  border-radius: 6px !important;
+  font-weight: 500 !important;
+  padding: 0.4em 0.8em !important;
+}
+
+.fc-button:hover {
+  background: #e9ecef !important;
+  border-color: #adb5bd !important;
+}
+
+.fc-button-active {
+  background: #007bff !important;
+  border-color: #007bff !important;
+  color: #fff !important;
+}
+
+.fc-event {
+  padding: 4px 8px !important;
+  font-size: 0.85rem !important;
+  font-weight: 500 !important;
+  border-radius: 4px !important;
+  cursor: pointer !important;
+  opacity: 0.9 !important;
+}
+
+.fc-event:hover {
+  opacity: 1 !important;
+}
+
+.fc-day-today {
+  background-color: rgba(0, 123, 255, 0.1) !important;
+}
+
+.card {
+  border: 1px solid #dee2e6;
+  transition: all 0.2s ease;
+}
+
+.card:hover {
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+
+.badge {
+  font-size: 0.9rem;
+  padding: 0.4em 0.6em;
+}
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  // Datos de eventos desde Django
+  const eventosData = {{ eventos_json|safe|default:"[]" }};
+  const calendarEl = document.getElementById('calendar');
+  
+  console.log('📅 Inicializando calendario con', eventosData.length, 'eventos');
+  
+  if (!calendarEl) {
+    console.error('❌ Elemento #calendar no encontrado');
+    return;
+  }
+  
+  // Inicializar FullCalendar
+  const calendar = new FullCalendar.Calendar(calendarEl, {
+    locale: 'es',
+    initialView: 'dayGridMonth',
+    height: 'auto',
+    headerToolbar: {
+      left: 'prev,next today',
+      center: 'title',
+      right: 'dayGridMonth,timeGridWeek,listWeek'
+    },
+    buttonText: {
+      today: 'Hoy',
+      month: 'Mes',
+      week: 'Semana',
+      list: 'Lista'
+    },
+    events: eventosData,
+    eventClick: function(info) {
+      // Mostrar detalles del evento en modal o redireccionar
+      const evento = info.event;
+      const detalles = `
+        Título: ${evento.title}
+        Fecha: ${evento.start.toLocaleDateString('es-ES')}
+        ${evento.extendedProps.description ? `Descripción: ${evento.extendedProps.description}` : ''}
+      `;
+      
+      if (confirm(detalles + '\n\n¿Deseas editar este evento?')) {
+        {% if puede_crear_eventos %}
+        window.location.href = `/eventos/editar/${evento.id}/`;
+        {% endif %}
+      }
+    },
+    dateClick: function(info) {
+      {% if puede_crear_eventos %}
+      // Redireccionar a agregar evento con fecha preseleccionada
+      const fecha = info.dateStr;
+      window.location.href = `{% url 'agregar_evento' %}?fecha=${fecha}`;
+      {% endif %}
+    },
+    dayMaxEvents: 3,
+    moreLinkClick: 'listWeek',
+    displayEventTime: true,
+    eventTimeFormat: {
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: false
+    }
+  });
+  
+  calendar.render();
+  console.log('✅ Calendario renderizado exitosamente');
+});
+
+// Función para eliminar evento
+function eliminarEvento(eventoId, titulo) {
+  if (confirm(`¿Estás seguro de eliminar el evento "${titulo}"?\n\nEsta acción no se puede deshacer.`)) {
+    // Crear formulario para enviar DELETE
+    const form = document.createElement('form');
+    form.method = 'POST';
+    form.action = `/eventos/eliminar/${eventoId}/`;
+    
+    const csrfToken = document.createElement('input');
+    csrfToken.type = 'hidden';
+    csrfToken.name = 'csrfmiddlewaretoken';
+    csrfToken.value = '{{ csrf_token }}';
+    
+    form.appendChild(csrfToken);
+    document.body.appendChild(form);
+    form.submit();
+  }
+}
+</script>
+{% endblock %}

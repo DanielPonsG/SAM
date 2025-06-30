@@ -342,6 +342,7 @@ class EventoCalendario(models.Model):
     # Asignación a cursos
     cursos = models.ManyToManyField('Curso', blank=True, related_name='eventos')
     para_todos_los_cursos = models.BooleanField(default=False, verbose_name='Para todos los cursos')
+    solo_profesores = models.BooleanField(default=False, verbose_name='Solo para profesores')
     
     # Quien creó el evento
     creado_por = models.ForeignKey(User, on_delete=models.CASCADE, related_name='eventos_creados', null=True, blank=True)

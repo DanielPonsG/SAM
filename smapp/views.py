@@ -592,10 +592,29 @@ def calendario(request):
             'backgroundColor': evento.color_por_tipo,
             'borderColor': evento.color_por_tipo,
             'textColor': '#fff',
-            'url': f'/eventos/detalle/{evento.id}/' if hasattr(evento, 'get_absolute_url') else None
+            'extendedProps': {
+                'description': evento.descripcion or '',
+                'responsable': evento.creado_por.first_name if evento.creado_por and evento.creado_por.first_name else (evento.creado_por.username if evento.creado_por else 'Sistema'),
+                'tipo': evento.get_tipo_evento_display(),
+                'prioridad': evento.get_prioridad_display()
+            }
         })
     
     print(f"DEBUG: Preparando {len(eventos_json)} eventos para FullCalendar")  # Debug
+    
+    # Calcular estadísticas para las tarjetas
+    from datetime import datetime, timedelta
+    hoy = datetime.now().date()
+    inicio_semana = hoy - timedelta(days=hoy.weekday())
+    fin_semana = inicio_semana + timedelta(days=6)
+    
+    eventos_hoy = eventos_base.filter(fecha=hoy).count()
+    eventos_semana = eventos_base.filter(fecha__range=[inicio_semana, fin_semana]).count()
+    
+    eventos_count = {
+        'hoy': eventos_hoy,
+        'semana': eventos_semana
+    }
     
     # Obtener cursos disponibles para filtros y modal
     cursos = []
@@ -614,6 +633,7 @@ def calendario(request):
     context = {
         'eventos': eventos.order_by('fecha')[:10],  # Próximos 10 eventos para la tabla
         'eventos_json': json.dumps(eventos_json),
+        'eventos_count': eventos_count,
         'cursos': cursos,
         'fecha_filtro': fecha_filtro,
         'curso_filtro': curso_filtro,
