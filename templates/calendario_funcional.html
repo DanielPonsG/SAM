@@ -114,13 +114,7 @@
                           {% if evento.hora_fin %} - {{ evento.hora_fin|time:"H:i" }}{% endif %}
                         {% endif %}
                         <br><i class="fa fa-user"></i> 
-                        <strong>
-                          {% if evento.creado_por %}
-                            {{ evento.creado_por.first_name|default:evento.creado_por.username }}
-                          {% else %}
-                            Sistema
-                          {% endif %}
-                        </strong>
+                        <strong>{{ evento.creado_por.first_name|default:evento.creado_por.username }}</strong>
                       </small>
                     </p>
                     {% if evento.descripcion %}
