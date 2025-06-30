@@ -976,9 +976,9 @@ class AnotacionForm(forms.ModelForm):
             
             # Obtener cursos donde el profesor tiene asignaturas asignadas
             try:
-                # Intentar usar la relación many-to-many si existe
+                # Usar solo la relación profesor_responsable
                 cursos_asignaturas = Curso.objects.filter(
-                    asignaturas__profesores_responsables=profesor,
+                    asignaturas__profesor_responsable=profesor,
                     anio=anio_actual
                 ).distinct()
                 cursos_ids.update(cursos_asignaturas.values_list('id', flat=True))
@@ -1012,15 +1012,22 @@ class AnotacionForm(forms.ModelForm):
             # Filtrar asignaturas del profesor
             try:
                 asignaturas_ids = set()
-                asignaturas_profesor = profesor.asignaturas.all()
-                asignaturas_ids.update(asignaturas_profesor.values_list('id', flat=True))
                 
+                # Asignaturas donde el profesor es responsable
                 asignaturas_responsable = Asignatura.objects.filter(profesor_responsable=profesor)
                 asignaturas_ids.update(asignaturas_responsable.values_list('id', flat=True))
+                
+                # Si el profesor tiene una relación many-to-many con asignaturas, incluirlas también
+                try:
+                    asignaturas_profesor = profesor.asignaturas.all()
+                    asignaturas_ids.update(asignaturas_profesor.values_list('id', flat=True))
+                except:
+                    pass
                 
                 if asignaturas_ids:
                     asignaturas_disponibles = Asignatura.objects.filter(id__in=asignaturas_ids)
                 else:
+                    # Si no tiene asignaturas específicas, mostrar todas
                     asignaturas_disponibles = Asignatura.objects.all()
             except:
                 asignaturas_disponibles = Asignatura.objects.all()

@@ -1,0 +1,725 @@
+{% extends "index_master.html" %}
+{% block content %}
+<div class="right_col" role="main">
+  <div class="container-fluid">
+    {% csrf_token %}
+    
+    <!-- Mensajes de éxito y error -->
+    {% if messages %}
+      <div class="row mb-3">
+        <div class="col-12">
+          {% for message in messages %}
+            <div class="alert alert-{{ message.tags|default:'info' }} alert-dismissible fade show" role="alert">
+              <i class="fas fa-{{ message.tags|default:'info'|yesno:'check-circle,exclamation-triangle,info-circle' }} me-2"></i>
+              {{ message }}
+              <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+          {% endfor %}
+        </div>
+      </div>
+    {% endif %}
+
+    <!-- Header -->
+    <div class="row mb-4">
+      <div class="col-12">
+        <div class="bg-white p-4 rounded shadow-sm border">
+          <div class="d-flex justify-content-between align-items-center">
+            <div>
+              <h2 class="mb-1 text-dark">
+                <i class="fas fa-school me-2"></i>Gestión de Cursos
+              </h2>
+              <p class="text-muted mb-0">Administra cursos del año académico {{ anio_actual }}</p>
+            </div>
+            <div>
+              {% if puede_editar %}
+                <a href="{% url 'agregar_curso' %}" class="btn btn-primary">
+                  <i class="fas fa-plus me-2"></i>Nuevo Curso
+                </a>
+              {% endif %}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Estadísticas -->
+    <div class="row mb-4">
+      <div class="col-md-2">
+        <div class="card border shadow-sm bg-white">
+          <div class="card-body text-center">
+            <i class="fas fa-school fa-2x text-primary mb-2"></i>
+            <h3 class="mb-0 text-dark">{{ total_cursos }}</h3>
+            <p class="mb-0 text-muted">Cursos</p>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-2">
+        <div class="card border shadow-sm bg-white">
+          <div class="card-body text-center">
+            <i class="fas fa-users fa-2x text-success mb-2"></i>
+            <h3 class="mb-0 text-dark">{{ total_estudiantes_asignados }}</h3>
+            <p class="mb-0 text-muted">Estudiantes</p>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-2">
+        <div class="card border shadow-sm bg-white">
+          <div class="card-body text-center">
+            <i class="fas fa-user-tie fa-2x text-info mb-2"></i>
+            <h3 class="mb-0 text-dark">{{ profesores_jefe_asignados }}</h3>
+            <p class="mb-0 text-muted">Prof. Jefe</p>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-2">
+        <div class="card border shadow-sm bg-white">
+          <div class="card-body text-center">
+            <i class="fas fa-book fa-2x text-warning mb-2"></i>
+            <h3 class="mb-0 text-dark">{{ total_asignaturas_asignadas }}</h3>
+            <p class="mb-0 text-muted">Asignaturas</p>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-2">
+        <div class="card border shadow-sm bg-white">
+          <div class="card-body text-center">
+            <i class="fas fa-user-graduate fa-2x text-secondary mb-2"></i>
+            <h3 class="mb-0 text-dark">{{ total_estudiantes_pendientes }}</h3>
+            <p class="mb-0 text-muted">Pendientes</p>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-2">
+        <div class="card border shadow-sm bg-white">
+          <div class="card-body text-center">
+            <i class="fas fa-chart-line fa-2x text-purple mb-2"></i>
+            <h3 class="mb-0 text-dark">{{ total_asignaturas_disponibles }}</h3>
+            <p class="mb-0 text-muted">Disponibles</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Tabla de cursos -->
+    <div class="card border shadow-sm">
+      <div class="card-header bg-light border-bottom">
+        <h5 class="mb-0 text-dark">
+          <i class="fas fa-list me-2"></i>Cursos Registrados
+        </h5>
+      </div>
+      <div class="card-body p-0">
+        {% if cursos %}
+          <div class="table-responsive">
+            <table class="table table-hover mb-0">
+              <thead class="table-light">
+                <tr>
+                  <th class="fw-semibold">Curso</th>
+                  <th class="fw-semibold">Profesor Jefe</th>
+                  <th class="fw-semibold text-center">Estudiantes</th>
+                  <th class="fw-semibold text-center">Asignaturas</th>
+                  {% if puede_editar %}
+                  <th class="fw-semibold text-center">Acciones</th>
+                  {% endif %}
+                </tr>
+              </thead>
+              <tbody>
+                {% for curso in cursos %}
+                  <tr data-curso-id="{{ curso.id }}">
+                    <td>
+                      <div class="d-flex align-items-center">
+                        <div class="course-badge me-3">
+                          {% if curso.nivel|slice:"-1" == "B" %}
+                            <span class="badge bg-primary">Básico</span>
+                          {% else %}
+                            <span class="badge bg-info">Medio</span>
+                          {% endif %}
+                        </div>
+                        <div>
+                          <h6 class="mb-0 fw-medium">{{ curso.get_nivel_display }}{{ curso.paralelo }}</h6>
+                          <small class="text-muted">{{ curso.anio }}</small>
+                        </div>
+                      </div>
+                    </td>
+                    <td>
+                      {% if curso.profesor_jefe %}
+                        <div class="d-flex align-items-center">
+                          <i class="fas fa-user-tie text-primary me-2"></i>
+                          <span class="fw-medium">{{ curso.profesor_jefe.get_nombre_completo }}</span>
+                        </div>
+                      {% else %}
+                        <span class="badge bg-warning text-dark">
+                          <i class="fas fa-exclamation-triangle me-1"></i>Sin Asignar
+                        </span>
+                      {% endif %}
+                    </td>
+                    <td class="text-center">
+                      <span class="badge bg-success rounded-pill">{{ curso.estudiantes.count }}</span>
+                      {% if curso.estudiantes.count > 0 %}
+                        <button type="button" class="btn btn-link btn-sm p-0 ms-2" 
+                                onclick="toggleEstudiantes('estudiantes-{{ curso.id }}', this)"
+                                title="Ver estudiantes">
+                          <i class="fas fa-eye me-1"></i>Ver
+                        </button>
+                      {% endif %}
+                    </td>
+                    <td class="text-center">
+                      <span class="badge bg-info rounded-pill">{{ curso.asignaturas.count }}</span>
+                      {% if curso.asignaturas.count > 0 %}
+                        <button type="button" class="btn btn-link btn-sm p-0 ms-2" 
+                                onclick="toggleAsignaturas('asignaturas-{{ curso.id }}', this)"
+                                title="Ver asignaturas">
+                          <i class="fas fa-eye me-1"></i>Ver
+                        </button>
+                      {% endif %}
+                    </td>
+                    {% if puede_editar %}
+                    <td class="text-center">
+                      <div class="btn-group btn-group-sm" role="group">
+                        <button type="button" 
+                                class="btn btn-outline-primary" 
+                                onclick="gestionarAsignaturasCurso({{ curso.id }}, '{{ curso.get_nivel_display }}{{ curso.paralelo }}')"
+                                title="Gestionar asignaturas">
+                          <i class="fas fa-book"></i>
+                        </button>
+                        <a href="{% url 'editar_curso' curso.id %}" 
+                           class="btn btn-outline-secondary"
+                           title="Editar curso">
+                          <i class="fas fa-edit"></i>
+                        </a>
+                        <button type="button" 
+                                class="btn btn-outline-danger" 
+                                onclick="confirmarEliminacion('{{ curso.get_nivel_display }}{{ curso.paralelo }}', {{ curso.id }})"
+                                title="Eliminar curso">
+                          <i class="fas fa-trash"></i>
+                        </button>
+                      </div>
+                    </td>
+                    {% endif %}
+                  </tr>
+                  
+                  <!-- Fila de estudiantes (oculta por defecto) -->
+                  {% if curso.estudiantes.count > 0 %}
+                  <tr id="estudiantes-{{ curso.id }}" class="table-light" style="display: none;">
+                    <td colspan="{% if puede_editar %}5{% else %}4{% endif %}">
+                      <div class="p-3">
+                        <h6 class="text-primary mb-2">
+                          <i class="fas fa-users me-2"></i>Estudiantes ({{ curso.estudiantes.count }})
+                        </h6>
+                        <div class="row">
+                          {% for estudiante in curso.estudiantes.all %}
+                            <div class="col-md-4 col-sm-6 mb-2">
+                              <div class="d-flex align-items-center">
+                                <i class="fas fa-user-graduate text-success me-2"></i>
+                                <span class="small">{{ estudiante.get_nombre_completo }}</span>
+                              </div>
+                            </div>
+                          {% endfor %}
+                        </div>
+                      </div>
+                    </td>
+                  </tr>
+                  {% endif %}
+                  
+                  <!-- Fila de asignaturas (oculta por defecto) -->
+                  {% if curso.asignaturas.count > 0 %}
+                  <tr id="asignaturas-{{ curso.id }}" class="table-light" style="display: none;">
+                    <td colspan="{% if puede_editar %}5{% else %}4{% endif %}">
+                      <div class="p-3">
+                        <h6 class="text-info mb-2">
+                          <i class="fas fa-book me-2"></i>Asignaturas ({{ curso.asignaturas.count }})
+                        </h6>
+                        <div class="row">
+                          {% for asignatura in curso.asignaturas.all %}
+                            <div class="col-md-4 col-sm-6 mb-2">
+                              <div class="d-flex align-items-center justify-content-between">
+                                <div class="d-flex align-items-center">
+                                  <i class="fas fa-book-open text-info me-2"></i>
+                                  <div>
+                                    <span class="small fw-medium">{{ asignatura.nombre }}</span>
+                                    {% if asignatura.profesor_responsable %}
+                                      <br><small class="text-muted">{{ asignatura.profesor_responsable.get_nombre_completo }}</small>
+                                    {% endif %}
+                                  </div>
+                                </div>
+                                {% if puede_editar %}
+                                <button type="button" 
+                                        class="btn btn-outline-danger btn-sm"
+                                        onclick="removerAsignaturaCurso({{ curso.id }}, {{ asignatura.id }}, '{{ asignatura.nombre }}', '{{ curso.get_nivel_display }}{{ curso.paralelo }}')"
+                                        title="Remover asignatura">
+                                  <i class="fas fa-times"></i>
+                                </button>
+                                {% endif %}
+                              </div>
+                            </div>
+                          {% endfor %}
+                        </div>
+                      </div>
+                    </td>
+                  </tr>
+                  {% endif %}
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        {% else %}
+          <div class="text-center py-5">
+            <i class="fas fa-school fa-3x text-muted mb-3"></i>
+            <h5 class="text-muted">No hay cursos registrados</h5>
+            <p class="text-muted">Comienza agregando el primer curso del año académico.</p>
+            {% if puede_editar %}
+              <a href="{% url 'agregar_curso' %}" class="btn btn-primary">
+                <i class="fas fa-plus me-2"></i>Agregar Primer Curso
+              </a>
+            {% endif %}
+          </div>
+        {% endif %}
+      </div>
+    </div>
+
+    <!-- Modal para gestionar asignaturas del curso -->
+    <div class="modal fade" id="modalGestionarAsignaturas" tabindex="-1">
+      <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title">
+              <i class="fas fa-book me-2"></i>Gestionar Asignaturas - <span id="modalCursoNombre"></span>
+            </h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+          </div>
+          <div class="modal-body">
+            <div class="row">
+              <!-- Asignaturas disponibles -->
+              <div class="col-md-6">
+                <h6 class="text-primary mb-3">Asignaturas Disponibles</h6>
+                <div id="asignaturasDisponibles">
+                  <!-- Se carga via AJAX -->
+                </div>
+              </div>
+              
+              <!-- Asignaturas asignadas -->
+              <div class="col-md-6">
+                <h6 class="text-success mb-3">Asignaturas Asignadas</h6>
+                <div id="asignaturasAsignadas">
+                  <!-- Se carga via AJAX -->
+                </div>
+              </div>
+            </div>
+            <input type="hidden" id="modalCursoId">
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Sección de estudiantes pendientes -->
+    {% if estudiantes_pendientes and puede_editar %}
+    <div class="card border shadow-sm mt-4">
+      <div class="card-header bg-warning bg-opacity-10 border-bottom">
+        <div class="d-flex justify-content-between align-items-center">
+          <h5 class="mb-0 text-dark">
+            <i class="fas fa-exclamation-triangle me-2"></i>Estudiantes Pendientes ({{ total_estudiantes_pendientes }})
+          </h5>
+        </div>
+      </div>
+      <div class="collapse" id="seccionPendientes">
+        <div class="card-body">
+          <!-- Contenido de estudiantes pendientes -->
+        </div>
+      </div>
+    </div>
+    {% endif %}
+  </div>
+</div>
+
+<!-- JavaScript -->
+<script>
+function toggleEstudiantes(id, btn) {
+  var fila = document.getElementById(id);
+  var icon = btn.querySelector('i');
+  
+  if (fila.style.display === "none") {
+    fila.style.display = "";
+    icon.className = "fas fa-eye-slash me-1";
+    btn.innerHTML = '<i class="fas fa-eye-slash me-1"></i>Ocultar';
+  } else {
+    fila.style.display = "none";
+    icon.className = "fas fa-eye me-1";
+    btn.innerHTML = '<i class="fas fa-eye me-1"></i>Ver';
+  }
+}
+
+function toggleAsignaturas(id, btn) {
+  var fila = document.getElementById(id);
+  var icon = btn.querySelector('i');
+  
+  if (fila.style.display === "none") {
+    fila.style.display = "";
+    icon.className = "fas fa-eye-slash me-1";
+    btn.innerHTML = '<i class="fas fa-eye-slash me-1"></i>Ocultar';
+  } else {
+    fila.style.display = "none";
+    icon.className = "fas fa-eye me-1";
+    btn.innerHTML = '<i class="fas fa-eye me-1"></i>Ver';
+  }
+}
+
+function confirmarEliminacion(nombreCurso, cursoId) {
+  if (confirm(`¿Estás seguro de que deseas eliminar el curso "${nombreCurso}"?\n\nEsta acción no se puede deshacer y eliminará:\n- Todas las asignaciones de estudiantes\n- Todas las asignaciones de asignaturas\n- Todos los horarios asociados\n\n¿Continuar?`)) {
+    window.location.href = `/cursos/eliminar/${cursoId}/`;
+  }
+}
+
+function gestionarAsignaturasCurso(cursoId, cursoNombre) {
+  document.getElementById('modalCursoId').value = cursoId;
+  document.getElementById('modalCursoNombre').textContent = cursoNombre;
+  
+  // Cargar asignaturas reales via AJAX
+  cargarAsignaturasCursoReal(cursoId);
+  
+  var modal = new bootstrap.Modal(document.getElementById('modalGestionarAsignaturas'));
+  modal.show();
+}
+
+function cargarAsignaturasCursoReal(cursoId) {
+  const disponiblesContainer = document.getElementById('asignaturasDisponibles');
+  const asignadasContainer = document.getElementById('asignaturasAsignadas');
+  
+  // Mostrar indicador de carga
+  disponiblesContainer.innerHTML = '<div class="text-center p-3"><i class="fas fa-spinner fa-spin"></i> Cargando...</div>';
+  asignadasContainer.innerHTML = '<div class="text-center p-3"><i class="fas fa-spinner fa-spin"></i> Cargando...</div>';
+  
+  // Obtener token CSRF
+  const csrftoken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+  
+  fetch(`/ajax/obtener-asignaturas-curso/${cursoId}/`, {
+    method: 'GET',
+    headers: {
+      'X-CSRFToken': csrftoken,
+      'Content-Type': 'application/json',
+    },
+  })
+  .then(response => response.json())
+  .then(data => {
+    if (data.success) {
+      mostrarAsignaturas(data.data, cursoId);
+    } else {
+      console.error('Error:', data.error);
+      disponiblesContainer.innerHTML = '<div class="text-center text-danger p-3">Error al cargar asignaturas</div>';
+      asignadasContainer.innerHTML = '<div class="text-center text-danger p-3">Error al cargar asignaturas</div>';
+    }
+  })
+  .catch(error => {
+    console.error('Error:', error);
+    disponiblesContainer.innerHTML = '<div class="text-center text-danger p-3">Error de conexión</div>';
+    asignadasContainer.innerHTML = '<div class="text-center text-danger p-3">Error de conexión</div>';
+  });
+}
+
+function mostrarAsignaturas(data, cursoId) {
+  const disponiblesContainer = document.getElementById('asignaturasDisponibles');
+  const asignadasContainer = document.getElementById('asignaturasAsignadas');
+  
+  // Mostrar asignaturas disponibles
+  disponiblesContainer.innerHTML = '';
+  if (data.asignaturas_disponibles.length > 0) {
+    data.asignaturas_disponibles.forEach(asignatura => {
+      const div = document.createElement('div');
+      div.className = 'mb-2';
+      div.innerHTML = `
+        <div class="d-flex align-items-center justify-content-between p-2 border rounded bg-light">
+          <div>
+            <span class="fw-medium">${asignatura.nombre}</span>
+            <br><small class="text-muted">${asignatura.codigo_asignatura}</small>
+          </div>
+          <button type="button" class="btn btn-sm btn-outline-success" 
+                  onclick="asignarAsignaturaReal(${asignatura.id}, '${asignatura.nombre}', ${cursoId})">
+            <i class="fas fa-plus"></i>
+          </button>
+        </div>
+      `;
+      disponiblesContainer.appendChild(div);
+    });
+  } else {
+    disponiblesContainer.innerHTML = '<div class="text-center text-muted p-3">Todas las asignaturas están asignadas</div>';
+  }
+  
+  // Mostrar asignaturas asignadas
+  asignadasContainer.innerHTML = '';
+  if (data.asignaturas_asignadas.length > 0) {
+    data.asignaturas_asignadas.forEach(asignatura => {
+      const div = document.createElement('div');
+      div.className = 'mb-2';
+      div.innerHTML = `
+        <div class="d-flex align-items-center justify-content-between p-2 border rounded bg-success bg-opacity-10">
+          <div>
+            <span class="fw-medium">${asignatura.nombre}</span>
+            <br><small class="text-muted">${asignatura.codigo_asignatura}</small>
+          </div>
+          <button type="button" class="btn btn-sm btn-outline-danger" 
+                  onclick="desasignarAsignaturaReal(${asignatura.id}, '${asignatura.nombre}', ${cursoId})">
+            <i class="fas fa-times"></i>
+          </button>
+        </div>
+      `;
+      asignadasContainer.appendChild(div);
+    });
+  } else {
+    asignadasContainer.innerHTML = '<div class="text-center text-muted p-3">No hay asignaturas asignadas</div>';
+  }
+}
+
+function asignarAsignaturaReal(asignaturaId, asignaturaNombre, cursoId) {
+  if (!confirm(`¿Asignar ${asignaturaNombre} al curso?`)) {
+    return;
+  }
+  
+  const csrftoken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+  
+  fetch('/ajax/gestionar-asignaturas-curso/', {
+    method: 'POST',
+    headers: {
+      'X-CSRFToken': csrftoken,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      curso_id: cursoId,
+      asignatura_id: asignaturaId,
+      accion: 'asignar'
+    })
+  })
+  .then(response => response.json())
+  .then(data => {
+    if (data.success) {
+      // Mostrar mensaje de éxito
+      mostrarMensaje(data.mensaje, 'success');
+      // Recargar las asignaturas del modal
+      cargarAsignaturasCursoReal(cursoId);
+      // Actualizar el badge en la tabla principal
+      actualizarBadgeAsignaturas(cursoId, data.asignaturas_curso);
+      // Actualizar estadísticas globales
+      actualizarEstadisticasGlobales(data);
+    } else {
+      mostrarMensaje(data.error, 'error');
+    }
+  })
+  .catch(error => {
+    console.error('Error:', error);
+    mostrarMensaje('Error de conexión', 'error');
+  });
+}
+
+function desasignarAsignaturaReal(asignaturaId, asignaturaNombre, cursoId) {
+  if (!confirm(`¿Desasignar ${asignaturaNombre} del curso?`)) {
+    return;
+  }
+  
+  const csrftoken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+  
+  fetch('/ajax/gestionar-asignaturas-curso/', {
+    method: 'POST',
+    headers: {
+      'X-CSRFToken': csrftoken,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      curso_id: cursoId,
+      asignatura_id: asignaturaId,
+      accion: 'desasignar'
+    })
+  })
+  .then(response => response.json())
+  .then(data => {
+    if (data.success) {
+      // Mostrar mensaje de éxito
+      mostrarMensaje(data.mensaje, 'success');
+      // Recargar las asignaturas del modal
+      cargarAsignaturasCursoReal(cursoId);
+      // Actualizar el badge en la tabla principal
+      actualizarBadgeAsignaturas(cursoId, data.asignaturas_curso);
+      // Actualizar estadísticas globales
+      actualizarEstadisticasGlobales(data);
+    } else {
+      mostrarMensaje(data.error, 'error');
+    }
+  })
+  .catch(error => {
+    console.error('Error:', error);
+    mostrarMensaje('Error de conexión', 'error');
+  });
+}
+
+function actualizarBadgeAsignaturas(cursoId, cantidad) {
+  const fila = document.querySelector(`tr[data-curso-id="${cursoId}"]`);
+  if (fila) {
+    const badge = fila.querySelector('.badge.bg-info');
+    if (badge) {
+      badge.textContent = cantidad;
+    }
+  }
+}
+
+function actualizarEstadisticasGlobales(data) {
+  // Actualizar el total de asignaturas asignadas en las estadísticas
+  if (data.total_asignaturas_asignadas !== undefined) {
+    const estadisticaElement = document.querySelector('.card-body .text-dark');
+    if (estadisticaElement && estadisticaElement.closest('.card').querySelector('.fa-book')) {
+      estadisticaElement.textContent = data.total_asignaturas_asignadas;
+    }
+  }
+}
+
+function mostrarMensaje(mensaje, tipo) {
+  // Crear alerta temporal
+  const alertDiv = document.createElement('div');
+  alertDiv.className = `alert alert-${tipo === 'success' ? 'success' : 'danger'} alert-dismissible fade show`;
+  alertDiv.innerHTML = `
+    <i class="fas fa-${tipo === 'success' ? 'check-circle' : 'exclamation-triangle'} me-2"></i>
+    ${mensaje}
+    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+  `;
+  
+  // Insertar al inicio del contenedor
+  const container = document.querySelector('.container-fluid');
+  container.insertBefore(alertDiv, container.firstChild);
+  
+  // Auto-ocultar después de 5 segundos
+  setTimeout(() => {
+    if (alertDiv.parentNode) {
+      alertDiv.remove();
+    }
+  }, 5000);
+}
+
+function removerAsignaturaCurso(cursoId, asignaturaId, asignaturaNombre, cursoNombre) {
+  if (confirm(`¿Estás seguro de que deseas remover la asignatura "${asignaturaNombre}" del curso "${cursoNombre}"?`)) {
+    // Usar la función real de desasignación
+    desasignarAsignaturaReal(asignaturaId, asignaturaNombre, cursoId);
+  }
+}
+
+// Inicialización cuando se carga la página
+document.addEventListener('DOMContentLoaded', function() {
+  // Asegurar que Bootstrap esté disponible
+  if (typeof bootstrap === 'undefined') {
+    console.warn('Bootstrap no está cargado');
+  }
+});
+</script>
+
+<!-- Estilos limpios y profesionales -->
+<style>
+.table-hover tbody tr:hover {
+  background-color: #f8f9fa;
+}
+
+.btn-group-sm > .btn {
+  border-radius: 4px;
+  margin: 0 1px;
+}
+
+.card {
+  border: 1px solid #dee2e6;
+  transition: transform 0.2s;
+}
+
+.card:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.border {
+  border: 1px solid #dee2e6 !important;
+}
+
+.fw-medium {
+  font-weight: 500;
+}
+
+.text-dark {
+  color: #212529 !important;
+}
+
+.badge {
+  font-size: 0.875em;
+  padding: 0.375rem 0.5rem;
+}
+
+.modal-lg {
+  max-width: 800px;
+}
+
+.modal-content {
+  border-radius: 8px;
+  border: none;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+}
+
+.modal-header {
+  border-bottom: 1px solid #dee2e6;
+  background-color: #f8f9fa;
+}
+
+.modal-footer {
+  border-top: 1px solid #dee2e6;
+  background-color: #f8f9fa;
+}
+
+.btn-outline-secondary:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+/* Responsive ajustes */
+@media (max-width: 768px) {
+  .btn-group-sm > .btn {
+    margin: 1px;
+    padding: 0.25rem 0.5rem;
+  }
+  
+  .card-body {
+    padding: 1rem 0.5rem;
+  }
+  
+  .modal-dialog {
+    margin: 0.5rem;
+  }
+  
+  .container-fluid {
+    padding: 0.5rem;
+  }
+}
+
+/* Animaciones suaves */
+.btn, .badge {
+  transition: all 0.2s ease;
+}
+
+.btn:hover {
+  transform: translateY(-1px);
+}
+
+/* Mejoras de accesibilidad */
+.btn:focus, .btn-link:focus {
+  box-shadow: 0 0 0 0.2rem rgba(0,123,255,.25);
+}
+
+/* Mejoras para alertas */
+.alert {
+  border-radius: 6px;
+  border: none;
+  margin-bottom: 1rem;
+}
+
+.alert-success {
+  background-color: #d4edda;
+  color: #155724;
+}
+
+.alert-danger {
+  background-color: #f8d7da;
+  color: #721c24;
+}
+</style>
+{% endblock %}

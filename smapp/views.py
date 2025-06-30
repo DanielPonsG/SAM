@@ -908,13 +908,9 @@ def listar_asignaturas(request):
                     asignatura = get_object_or_404(Asignatura, id=asignatura_id)
                     profesor = get_object_or_404(Profesor, id=profesor_id)
                     
-                    # Agregar profesor a la asignatura (usando ManyToMany)
-                    asignatura.profesores_responsables.add(profesor)
-                    
-                    # También actualizar el campo individual para compatibilidad
-                    if not asignatura.profesor_responsable:
-                        asignatura.profesor_responsable = profesor
-                        asignatura.save()
+                    # Asignar profesor a la asignatura (usando campo individual)
+                    asignatura.profesor_responsable = profesor
+                    asignatura.save()
                     
                     messages.success(request, f'Profesor {profesor.get_nombre_completo()} asignado exitosamente a {asignatura.nombre}.')
                 else:
@@ -933,13 +929,8 @@ def listar_asignaturas(request):
                     profesor = get_object_or_404(Profesor, id=profesor_id)
                     
                     # Remover profesor de la asignatura
-                    asignatura.profesores_responsables.remove(profesor)
-                    
-                    # Si era el profesor responsable principal, limpiar ese campo
                     if asignatura.profesor_responsable == profesor:
-                        # Asignar otro profesor responsable si hay más
-                        otros_profesores = asignatura.profesores_responsables.first()
-                        asignatura.profesor_responsable = otros_profesores
+                        asignatura.profesor_responsable = None
                         asignatura.save()
                     
                     messages.success(request, f'Profesor {profesor.get_nombre_completo()} removido exitosamente de {asignatura.nombre}.')
@@ -1029,8 +1020,7 @@ def listar_asignaturas(request):
         # Administradores y directores ven todas las asignaturas con información de cursos
         asignaturas = Asignatura.objects.select_related('profesor_responsable').prefetch_related(
             'horarios__curso', 
-            'cursos',  # Agregar cursos para mostrar en la tabla
-            'profesores_responsables'  # Incluir profesores del many-to-many
+            'cursos'  # Agregar cursos para mostrar en la tabla
         )
         cursos_alumno_ids = []
         
@@ -1068,21 +1058,25 @@ def listar_asignaturas(request):
         
         total_asignaturas = Asignatura.objects.count()
         
-        # Contar asignaturas con/sin profesor (considerando ambos campos)
+        # Contar asignaturas con/sin profesor
         asignaturas_con_profesor_query = Asignatura.objects.filter(
-            Q(profesor_responsable__isnull=False) | Q(profesores_responsables__isnull=False)
+            profesor_responsable__isnull=False
         ).distinct()
         asignaturas_con_profesor = asignaturas_con_profesor_query.count()
         asignaturas_sin_profesor_count = total_asignaturas - asignaturas_con_profesor
         
         # Asignaturas sin profesor para la sección especial
         asignaturas_sin_profesor = Asignatura.objects.filter(
-            profesor_responsable__isnull=True,
-            profesores_responsables__isnull=True
+            profesor_responsable__isnull=True
         ).distinct()
         
-        # Contar asignaturas con/sin cursos
-        asignaturas_con_cursos = Asignatura.objects.filter(cursos__isnull=False).distinct().count()
+        # Contar asignaturas con/sin cursos (solo del año actual)
+        from django.utils import timezone
+        anio_actual = timezone.now().year
+        
+        asignaturas_con_cursos = Asignatura.objects.filter(
+            cursos__anio=anio_actual
+        ).distinct().count()
         asignaturas_sin_cursos = total_asignaturas - asignaturas_con_cursos
         
         # Contar asignaturas con/sin horarios
@@ -1175,7 +1169,7 @@ def ingresar_notas(request):
             cursos_como_jefe = Curso.objects.filter(profesor_jefe=profesor, anio=anio_actual)
             # Cursos donde imparte asignaturas
             cursos_con_asignaturas = Curso.objects.filter(
-                asignaturas__profesores_responsables=profesor, anio=anio_actual
+                asignaturas__profesor_responsable=profesor, anio=anio_actual
             ).distinct()
             # Combinar ambos tipos de cursos
             cursos_disponibles = (cursos_como_jefe | cursos_con_asignaturas).distinct().order_by('nivel', 'paralelo')
@@ -1218,7 +1212,7 @@ def ingresar_notas(request):
                     fecha_fin=date(anio_actual, 12, 15),
                     activo=True
                 )
-            profesor_asignatura = asignatura_seleccionada.profesores_responsables.first() or asignatura_seleccionada.profesor_responsable
+            profesor_asignatura = asignatura_seleccionada.profesor_responsable
             grupo, created = Grupo.objects.get_or_create(
                 asignatura=asignatura_seleccionada,
                 periodo_academico=periodo_actual,
@@ -1337,7 +1331,7 @@ def ver_notas_curso(request):
             profesor = Profesor.objects.get(user=request.user)
             cursos_como_jefe = Curso.objects.filter(profesor_jefe=profesor, anio=anio_actual)
             cursos_con_asignaturas = Curso.objects.filter(
-                asignaturas__profesores_responsables=profesor, anio=anio_actual
+                asignaturas__profesor_responsable=profesor, anio=anio_actual
             ).distinct()
             cursos_disponibles = (cursos_como_jefe | cursos_con_asignaturas).distinct().order_by('nivel', 'paralelo')
             if curso_id:
@@ -1549,7 +1543,7 @@ def registrar_asistencia_alumno(request):
                 # Profesor puede ver cursos donde es jefe o donde tiene asignaturas asignadas
                 cursos_jefe = profesor_actual.cursos_jefatura.filter(anio=timezone.now().year)
                 cursos_asignaturas = Curso.objects.filter(
-                    asignaturas__profesores_responsables=profesor_actual,
+                    asignaturas__profesor_responsable=profesor_actual,
                     anio=timezone.now().year
                 ).distinct()
                 # También incluir cursos donde el profesor tiene asignaturas con profesor_responsable (campo legacy)
@@ -1641,12 +1635,8 @@ def registrar_asistencia_alumno(request):
                 else:
                     # Buscar asignatura del profesor
                     asignatura_seleccionada = curso_seleccionado.asignaturas.filter(
-                        profesores_responsables=profesor_actual
+                        profesor_responsable=profesor_actual
                     ).first()
-                    if not asignatura_seleccionada:
-                        asignatura_seleccionada = curso_seleccionado.asignaturas.filter(
-                            profesor_responsable=profesor_actual
-                        ).first()
                 
                 if not asignatura_seleccionada:
                     messages.error(request, 'No se encontró una asignatura válida para registrar asistencia.')
@@ -1720,12 +1710,8 @@ def registrar_asistencia_alumno(request):
                 else:
                     # Buscar asignatura del profesor
                     asignatura_seleccionada = curso_seleccionado.asignaturas.filter(
-                        profesores_responsables=profesor_actual
+                        profesor_responsable=profesor_actual
                     ).first()
-                    if not asignatura_seleccionada:
-                        asignatura_seleccionada = curso_seleccionado.asignaturas.filter(
-                            profesor_responsable=profesor_actual
-                        ).first()
                 
                 if not asignatura_seleccionada:
                     messages.error(request, 'No tienes asignaturas asignadas a este curso.')
@@ -1790,7 +1776,7 @@ def ver_asistencia_alumno(request):
                 # Profesor puede ver cursos donde es jefe o donde tiene asignaturas
                 cursos_jefe = profesor_actual.cursos_jefatura.filter(anio=timezone.now().year)
                 cursos_asignaturas = Curso.objects.filter(
-                    asignaturas__profesores_responsables=profesor_actual,
+                    asignaturas__profesor_responsable=profesor_actual,
                     anio=timezone.now().year
                 ).distinct()
                 cursos_legacy = Curso.objects.filter(
@@ -2045,7 +2031,8 @@ def eliminar_evento(request, evento_id):
 
 @login_required
 def agregar_curso(request):
-    """Vista para agregar curso"""
+    """Vista para agregar curso usando CursoForm"""
+    from .forms import CursoForm
     from django.utils import timezone
     
     # Verificar permisos
@@ -2060,66 +2047,107 @@ def agregar_curso(request):
         return redirect('listar_cursos')
     
     if request.method == 'POST':
-        try:
-            nivel = request.POST.get('nivel')
-            paralelo = request.POST.get('paralelo', '').strip()
-            anio = request.POST.get('anio', timezone.now().year)
-            profesor_jefe_id = request.POST.get('profesor_jefe')
-            
-            # Validaciones
-            if not nivel:
-                messages.error(request, 'El nivel es obligatorio.')
-                return render(request, 'agregar_curso.html', {
-                    'profesores': Profesor.objects.all(),
-                    'user': request.user
-                })
-            
-            if not paralelo:
-                messages.error(request, 'El paralelo es obligatorio.')
-                return render(request, 'agregar_curso.html', {
-                    'profesores': Profesor.objects.all(),
-                    'user': request.user
-                })
-            
-            # Verificar si el curso ya existe
-            if Curso.objects.filter(nivel=nivel, paralelo=paralelo, anio=anio).exists():
-                messages.error(request, f'Ya existe un curso {nivel} paralelo {paralelo} para el año {anio}.')
-                return render(request, 'agregar_curso.html', {
-                    'profesores': Profesor.objects.all(),
-                    'user': request.user
-                })
-            
-            # Crear curso
-            curso_data = {
-                'nivel': nivel,
-                'paralelo': paralelo,
-                'anio': int(anio)
-            }
-            
-            if profesor_jefe_id:
-                profesor_jefe = get_object_or_404(Profesor, id=profesor_jefe_id)
-                curso_data['profesor_jefe'] = profesor_jefe
-            
-            curso = Curso.objects.create(**curso_data)
-            
-            messages.success(request, f'Curso {curso.get_nivel_display()} {paralelo} creado exitosamente.')
-            return redirect('listar_cursos')
-            
-        except Exception as e:
-            messages.error(request, f'Error al crear el curso: {str(e)}')
+        form = CursoForm(request.POST)
+        if form.is_valid():
+            try:
+                curso = form.save()
+                messages.success(
+                    request, 
+                    f'Curso {curso.get_nivel_display()}{curso.paralelo} creado exitosamente.'
+                )
+                return redirect('listar_cursos')
+            except Exception as e:
+                messages.error(request, f'Error al crear el curso: {str(e)}')
+        else:
+            # Mostrar errores del formulario
+            for field, errors in form.errors.items():
+                for error in errors:
+                    messages.error(request, f'{form.fields[field].label}: {error}')
+    else:
+        form = CursoForm()
+    
+    # Calcular estudiantes disponibles para mostrar en el template
+    anio_actual = timezone.now().year
+    cursos_actuales = Curso.objects.filter(anio=anio_actual)
+    estudiantes_asignados_ids = []
+    for curso in cursos_actuales:
+        estudiantes_curso = list(curso.estudiantes.values_list('id', flat=True))
+        estudiantes_asignados_ids.extend(estudiantes_curso)
+    
+    estudiantes_asignados_ids = set(estudiantes_asignados_ids)
+    total_estudiantes_disponibles = Estudiante.objects.exclude(
+        id__in=estudiantes_asignados_ids
+    ).count()
     
     context = {
-        'profesores': Profesor.objects.all().order_by('primer_nombre', 'apellido_paterno'),
+        'form': form,
+        'anio_actual': anio_actual,
+        'total_estudiantes_disponibles': total_estudiantes_disponibles,
         'user': request.user,
-        'anio_actual': timezone.now().year,
-        'niveles': Curso.NIVEL_CHOICES if hasattr(Curso, 'NIVEL_CHOICES') else []
     }
     return render(request, 'agregar_curso.html', context)
 
 @login_required
 def editar_curso(request, curso_id):
-    """Vista para editar curso"""
-    context = {'user': request.user, 'curso_id': curso_id}
+    """Vista para editar curso usando CursoForm"""
+    from .forms import CursoForm
+    from django.utils import timezone
+    
+    # Verificar permisos
+    user_type = 'otro'
+    if request.user.is_superuser:
+        user_type = 'administrador'
+    elif hasattr(request.user, 'perfil'):
+        user_type = request.user.perfil.tipo_usuario
+    
+    if user_type not in ['administrador', 'director']:
+        messages.error(request, 'No tienes permisos para editar cursos.')
+        return redirect('listar_cursos')
+    
+    # Obtener el curso
+    curso = get_object_or_404(Curso, id=curso_id)
+    
+    if request.method == 'POST':
+        form = CursoForm(request.POST, instance=curso)
+        if form.is_valid():
+            try:
+                curso_actualizado = form.save()
+                messages.success(
+                    request, 
+                    f'Curso {curso_actualizado.get_nivel_display()}{curso_actualizado.paralelo} actualizado exitosamente.'
+                )
+                return redirect('listar_cursos')
+            except Exception as e:
+                messages.error(request, f'Error al actualizar el curso: {str(e)}')
+        else:
+            # Mostrar errores del formulario
+            for field, errors in form.errors.items():
+                for error in errors:
+                    messages.error(request, f'{form.fields[field].label}: {error}')
+    else:
+        form = CursoForm(instance=curso)
+    
+    # Calcular estudiantes disponibles
+    anio_actual = timezone.now().year
+    cursos_actuales = Curso.objects.filter(anio=anio_actual).exclude(id=curso_id)
+    estudiantes_asignados_ids = []
+    for c in cursos_actuales:
+        estudiantes_curso = list(c.estudiantes.values_list('id', flat=True))
+        estudiantes_asignados_ids.extend(estudiantes_curso)
+    
+    estudiantes_asignados_ids = set(estudiantes_asignados_ids)
+    total_estudiantes_disponibles = Estudiante.objects.exclude(
+        id__in=estudiantes_asignados_ids
+    ).count()
+    
+    context = {
+        'form': form,
+        'curso': curso,
+        'anio_actual': anio_actual,
+        'total_estudiantes_disponibles': total_estudiantes_disponibles,
+        'user': request.user,
+        'editando': True,
+    }
     return render(request, 'editar_curso.html', context)
 
 @login_required
@@ -2149,7 +2177,7 @@ def agregar_asignatura(request):
         'nombre': '',
         'codigo_asignatura': '',
         'descripcion': '',
-        'profesores_responsables': ''
+        'profesor_responsable': ''
     }
     
     if request.method == 'POST':
@@ -2157,7 +2185,7 @@ def agregar_asignatura(request):
             nombre = request.POST.get('nombre', '').strip()
             codigo_asignatura = request.POST.get('codigo_asignatura', '').strip()
             descripcion = request.POST.get('descripcion', '').strip()
-            profesores_ids = request.POST.getlist('profesores_responsables')
+            profesor_id = request.POST.get('profesor_responsable', '')
             
             # Validaciones
             if not nombre:
@@ -2192,15 +2220,14 @@ def agregar_asignatura(request):
                 descripcion=descripcion
             )
             
-            # Asignar profesores
-            if profesores_ids:
-                profesores = Profesor.objects.filter(id__in=profesores_ids)
-                asignatura.profesores_responsables.set(profesores)
-                
-                # Asignar el primer profesor como responsable principal
-                if profesores.exists():
-                    asignatura.profesor_responsable = profesores.first()
+            # Asignar profesor responsable
+            if profesor_id:
+                try:
+                    profesor = Profesor.objects.get(id=profesor_id)
+                    asignatura.profesor_responsable = profesor
                     asignatura.save()
+                except Profesor.DoesNotExist:
+                    pass
             
             messages.success(request, f'Asignatura "{nombre}" creada exitosamente.')
             return redirect('listar_asignaturas')
@@ -2211,11 +2238,10 @@ def agregar_asignatura(request):
     # Crear objeto simulado para el formulario
     class FormSimulator:
         def __init__(self):
-
             self.nombre = type('field', (), {'errors': []})()
             self.codigo_asignatura = type('field', (), {'errors': []})()
             self.descripcion = type('field', (), {'errors': []})()
-            self.profesores_responsables = type('field', (), {'errors': []})()
+            self.profesor_responsable = type('field', (), {'errors': []})()
     
     context = {
         'form': FormSimulator(),
@@ -2282,7 +2308,6 @@ def ver_horario_curso(request):
             profesor = request.user.profesor
             horarios = HorarioCurso.objects.filter(
                 Q(asignatura__profesor_responsable=profesor) |
-                Q(asignatura__profesores_responsables=profesor) |
                 Q(curso__profesor_jefe=profesor)
             ).distinct().order_by('dia', 'hora_inicio')
             es_director = False
@@ -2332,8 +2357,7 @@ def editar_nota(request, nota_id):
         if user_type == 'profesor':
             try:
                 profesor = request.user.profesor
-                if not (asignatura.profesores_responsables.filter(id=profesor.id).exists() or 
-                       asignatura.profesor_responsable == profesor):
+                if not (asignatura.profesor_responsable == profesor):
                     messages.error(request, 'No tienes permisos para editar esta nota.')
                     return redirect('ver_notas_curso')
             except:
@@ -2386,8 +2410,7 @@ def eliminar_nota(request, nota_id):
         if user_type == 'profesor':
             try:
                 profesor = request.user.profesor
-                if not (asignatura.profesores_responsables.filter(id=profesor.id).exists() or 
-                       asignatura.profesor_responsable == profesor):
+                if not (asignatura.profesor_responsable == profesor):
                     messages.error(request, 'No tienes permisos para eliminar esta nota.')
                     return redirect('ver_notas_curso')
             except:
@@ -2433,8 +2456,7 @@ def agregar_nota_individual(request, estudiante_id, asignatura_id, evaluacion_no
         if user_type == 'profesor':
             try:
                 profesor = request.user.profesor
-                if not (asignatura.profesores_responsables.filter(id=profesor.id).exists() or 
-                       asignatura.profesor_responsable == profesor):
+                if not (asignatura.profesor_responsable == profesor):
                     messages.error(request, 'No tienes permisos para agregar notas a esta asignatura.')
                     return redirect('ver_notas_curso')
             except:
@@ -2458,7 +2480,7 @@ def agregar_nota_individual(request, estudiante_id, asignatura_id, evaluacion_no
         )
     
     # Obtener o crear grupo para esta asignatura
-    profesor_asignatura = asignatura.profesores_responsables.first() or asignatura.profesor_responsable
+    profesor_asignatura = asignatura.profesor_responsable
     grupo, created = Grupo.objects.get_or_create(
         asignatura=asignatura,
         periodo_academico=periodo_actual,
@@ -2608,7 +2630,6 @@ def editar_asistencia_alumno(request, asistencia_id):
                 # Profesor solo puede editar si es jefe del curso o responsable de la asignatura
                 puede_editar = (
                     asistencia.curso.profesor_jefe == profesor_actual or
-                    asistencia.asignatura.profesores_responsables.filter(id=profesor_actual.id).exists() or
                     asistencia.asignatura.profesor_responsable == profesor_actual
                 )
                 if not puede_editar:

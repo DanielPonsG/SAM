@@ -107,17 +107,14 @@ class Profesor(Persona):
         # Cursos donde es jefe
         cursos_jefe = self.cursos_jefatura.filter(anio=anio_actual)
         
-        # Cursos donde tiene asignaturas
+        # Cursos donde tiene asignaturas como responsable
         cursos_asignaturas = Curso.objects.filter(
-            asignaturas__profesores_responsables=self,
-            anio=anio_actual
-        ).distinct()
-        
-        # Cursos con asignaturas legacy
-        cursos_legacy = Curso.objects.filter(
             asignaturas__profesor_responsable=self,
             anio=anio_actual
         ).distinct()
+        
+        # Combinar ambos conjuntos
+        return (cursos_jefe | cursos_asignaturas).distinct().order_by('nivel', 'paralelo')
         
         return (cursos_jefe | cursos_asignaturas | cursos_legacy).distinct()
 
@@ -223,6 +220,30 @@ class Asignatura(models.Model):
 
     def __str__(self):
         return self.nombre
+    
+    def get_profesores_display(self):
+        """Retorna los profesores asociados a esta asignatura"""
+        profesores = []
+        
+        # Agregar el profesor responsable si existe
+        if self.profesor_responsable:
+            profesores.append(self.profesor_responsable)
+        
+        return profesores
+    
+    def get_cursos_asignados(self):
+        """Retorna los cursos del año actual donde está asignada esta asignatura"""
+        from django.utils import timezone
+        anio_actual = timezone.now().year
+        return self.cursos.filter(anio=anio_actual).order_by('nivel', 'paralelo')
+    
+    def get_cursos_count(self):
+        """Retorna el número de cursos del año actual donde está asignada esta asignatura"""
+        return self.get_cursos_asignados().count()
+    
+    def tiene_profesor(self):
+        """Retorna True si la asignatura tiene al menos un profesor asignado"""
+        return self.profesor_responsable is not None
 
 class Salon(models.Model):
     """

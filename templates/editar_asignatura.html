@@ -111,28 +111,26 @@
                     <span class="input-group-addon">
                       <i class="fa fa-user-tie text-success"></i>
                     </span>
-                    {{ form.profesores_responsables|add_class:"form-control chosen-select" }}
-                  </div>
-                  {% if form.profesores_responsables.errors %}
-                    <div class="text-danger">
-                      {% for error in form.profesores_responsables.errors %}
-                        <small><i class="fa fa-exclamation-circle"></i> {{ error }}</small>
+                    <select name="profesor_responsable" class="form-control">
+                      <option value="">Seleccionar profesor...</option>
+                      {% for profesor in profesores %}
+                        <option value="{{ profesor.id }}" {% if asignatura.profesor_responsable == profesor %}selected{% endif %}>
+                          {{ profesor.primer_nombre }} {{ profesor.apellido_paterno }}
+                        </option>
                       {% endfor %}
-                    </div>
-                  {% endif %}
+                    </select>
+                  </div>
                   <small class="text-muted">
                     <i class="fa fa-info-circle"></i> Mantén presionada Ctrl para seleccionar múltiples profesores.
                   </small>
                   
-                  <!-- Mostrar profesores seleccionados actualmente -->
-                  {% if asignatura and asignatura.profesores_responsables.exists %}
+                  <!-- Mostrar profesor responsable actual -->
+                  {% if asignatura and asignatura.profesor_responsable %}
                     <div style="margin-top: 10px;">
-                      <strong>Actualmente asignados:</strong><br>
-                      {% for profesor in asignatura.profesores_responsables.all %}
-                        <span class="label label-success" style="margin: 2px; display: inline-block;">
-                          <i class="fa fa-user"></i> {{ profesor.get_nombre_completo|default:profesor.codigo_profesor }}
-                        </span>
-                      {% endfor %}
+                      <strong>Profesor actual:</strong><br>
+                      <span class="label label-success" style="margin: 2px; display: inline-block;">
+                        <i class="fa fa-user"></i> {{ asignatura.profesor_responsable.get_nombre_completo|default:asignatura.profesor_responsable.codigo_profesor }}
+                      </span>
                     </div>
                   {% endif %}
                 </div>
@@ -226,23 +224,21 @@
                 </div>
               </div>
               
-              <!-- Profesores responsables -->
+              <!-- Profesor responsable -->
               <div class="col-md-6 col-sm-6 col-xs-12">
                 <div class="well">
-                  <h4><i class="fa fa-users text-success"></i> Profesores Responsables ({{ asignatura.profesores_responsables.count }})</h4>
-                  {% if asignatura.profesores_responsables.exists %}
+                  <h4><i class="fa fa-user text-success"></i> Profesor Responsable</h4>
+                  {% if asignatura.profesor_responsable %}
                     <ul class="list-unstyled">
-                      {% for profesor in asignatura.profesores_responsables.all %}
                       <li>
                         <span class="label label-success">
-                          <i class="fa fa-user"></i> {{ profesor.get_nombre_completo|default:profesor.codigo_profesor }}
+                          <i class="fa fa-user"></i> {{ asignatura.profesor_responsable.get_nombre_completo|default:asignatura.profesor_responsable.codigo_profesor }}
                         </span>
                       </li>
-                      {% endfor %}
                     </ul>
                   {% else %}
                     <p class="text-muted">
-                      <i class="fa fa-exclamation-triangle"></i> Sin profesores asignados
+                      <i class="fa fa-exclamation-triangle"></i> Sin profesor asignado
                     </p>
                   {% endif %}
                 </div>

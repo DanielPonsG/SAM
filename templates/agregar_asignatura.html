@@ -91,18 +91,19 @@
               </div>
 
               <div class="form-group">
-                <label class="control-label col-md-3 col-sm-3 col-xs-12" for="profesores_responsables">
-                  Profesores Responsables
+                <label class="control-label col-md-3 col-sm-3 col-xs-12" for="profesor_responsable">
+                  Profesor Responsable
                 </label>
                 <div class="col-md-6 col-sm-6 col-xs-12">
-                  <select id="profesores_responsables" name="profesores_responsables" class="form-control" multiple>
+                  <select id="profesor_responsable" name="profesor_responsable" class="form-control">
+                    <option value="">Seleccionar profesor...</option>
                     {% for profesor in profesores %}
                       <option value="{{ profesor.id }}">
                         {{ profesor.primer_nombre }} {{ profesor.apellido_paterno }} {{ profesor.apellido_materno }}
                       </option>
                     {% endfor %}
                   </select>
-                  <small class="form-text text-muted">Puedes seleccionar múltiples profesores responsables. También puedes asignar profesores más tarde.</small>
+                  <small class="form-text text-muted">Selecciona el profesor responsable de esta asignatura.</small>
                 </div>
               </div>
 
@@ -160,7 +161,7 @@ $(document).ready(function() {
     $('#id_nombre').addClass('form-control').attr('placeholder', 'Ej: Matemáticas Aplicadas');
     $('#id_codigo_asignatura').addClass('form-control').attr('placeholder', 'Ej: MAT-01');
     $('#id_descripcion').addClass('form-control').attr('placeholder', 'Descripción de la asignatura...');
-    $('#id_profesores_responsables input[type="checkbox"]').addClass('form-check-input');
+    $('#profesor_responsable').addClass('form-control');
     
     // Validación del formulario en el cliente
     $('form').on('submit', function(e) {
