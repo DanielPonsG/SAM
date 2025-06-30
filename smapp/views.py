@@ -841,6 +841,7 @@ def listar_cursos(request):
     cursos = sorted(cursos_queryset, key=lambda c: (c.orden_nivel, c.paralelo))
     
     # Calcular estadísticas
+    total_estudiantes = Estudiante.objects.count()  # Total de estudiantes en el sistema
     total_estudiantes_asignados = sum(curso.estudiantes.count() for curso in cursos)
     profesores_jefe_asignados = len([curso for curso in cursos if curso.profesor_jefe])
     total_asignaturas_asignadas = sum(curso.asignaturas.count() for curso in cursos)
@@ -868,6 +869,7 @@ def listar_cursos(request):
     context = {
         'cursos': cursos,
         'total_cursos': total_cursos,
+        'total_estudiantes': total_estudiantes,
         'total_estudiantes_asignados': total_estudiantes_asignados,
         'profesores_jefe_asignados': profesores_jefe_asignados,
         'total_asignaturas_asignadas': total_asignaturas_asignadas,

@@ -15,21 +15,80 @@
       {% endfor %}
     {% endif %}
 
-    <!-- Header Simple -->
+    <!-- Header con Estadísticas -->
     <div class="row mb-4">
       <div class="col-12">
-        <div class="d-flex justify-content-between align-items-center">
+        <div class="d-flex justify-content-between align-items-center mb-3">
           <div>
             <h2 class="mb-1">
               <i class="fas fa-school me-2 text-primary"></i>Cursos {{ anio_actual }}
             </h2>
-            <p class="text-muted mb-0">{{ total_cursos }} curso{{ total_cursos|pluralize }}, {{ total_estudiantes_asignados }} estudiante{{ total_estudiantes_asignados|pluralize }}</p>
+            <p class="text-muted mb-0">Sistema de gestión de cursos y estudiantes</p>
           </div>
           {% if puede_editar %}
             <a href="{% url 'agregar_curso' %}" class="btn btn-primary">
               <i class="fas fa-plus me-2"></i>Nuevo Curso
             </a>
           {% endif %}
+        </div>
+        
+        <!-- Estadísticas Detalladas -->
+        <div class="row">
+          <div class="col-md-3 col-sm-6 mb-3">
+            <div class="card border-primary">
+              <div class="card-body text-center py-3">
+                <div class="d-flex align-items-center justify-content-center">
+                  <i class="fas fa-graduation-cap fa-2x text-primary me-3"></i>
+                  <div>
+                    <h4 class="mb-0 text-primary fw-bold">{{ total_cursos }}</h4>
+                    <small class="text-muted">Curso{{ total_cursos|pluralize }}</small>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <div class="col-md-3 col-sm-6 mb-3">
+            <div class="card border-success">
+              <div class="card-body text-center py-3">
+                <div class="d-flex align-items-center justify-content-center">
+                  <i class="fas fa-users fa-2x text-success me-3"></i>
+                  <div>
+                    <h4 class="mb-0 text-success fw-bold">{{ total_estudiantes }}</h4>
+                    <small class="text-muted">Estudiante{{ total_estudiantes|pluralize }} totales</small>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <div class="col-md-3 col-sm-6 mb-3">
+            <div class="card border-info">
+              <div class="card-body text-center py-3">
+                <div class="d-flex align-items-center justify-content-center">
+                  <i class="fas fa-user-check fa-2x text-info me-3"></i>
+                  <div>
+                    <h4 class="mb-0 text-info fw-bold">{{ total_estudiantes_asignados }}</h4>
+                    <small class="text-muted">Asignado{{ total_estudiantes_asignados|pluralize }}</small>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <div class="col-md-3 col-sm-6 mb-3">
+            <div class="card border-warning">
+              <div class="card-body text-center py-3">
+                <div class="d-flex align-items-center justify-content-center">
+                  <i class="fas fa-user-clock fa-2x text-warning me-3"></i>
+                  <div>
+                    <h4 class="mb-0 text-warning fw-bold">{{ total_estudiantes_pendientes }}</h4>
+                    <small class="text-muted">Sin asignar</small>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -437,11 +496,62 @@ function eliminarCurso(nombreCurso, cursoId) {
 .card {
   border: 1px solid #dee2e6;
   box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  transition: transform 0.2s ease-in-out;
+}
+
+.card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+}
+
+/* Estilos para las tarjetas de estadísticas */
+.card.border-primary {
+  border-left: 4px solid #0d6efd !important;
+}
+
+.card.border-success {
+  border-left: 4px solid #198754 !important;
+}
+
+.card.border-info {
+  border-left: 4px solid #0dcaf0 !important;
+}
+
+.card.border-warning {
+  border-left: 4px solid #ffc107 !important;
+}
+
+.card-body {
+  border-radius: 6px;
+}
+
+.fw-bold {
+  font-weight: 700 !important;
 }
 
 @media (max-width: 768px) {
   .btn-group-sm > .btn {
     padding: 0.125rem 0.25rem;
+  }
+  
+  .card-body.py-3 {
+    padding: 1rem !important;
+  }
+  
+  .fa-2x {
+    font-size: 1.5em !important;
+  }
+}
+
+@media (max-width: 576px) {
+  .d-flex.align-items-center.justify-content-center {
+    flex-direction: column;
+    text-align: center;
+  }
+  
+  .fa-2x.me-3 {
+    margin-right: 0 !important;
+    margin-bottom: 0.5rem;
   }
 }
 </style>
