@@ -100,8 +100,8 @@
           {% csrf_token %}
           <input type="hidden" name="registro_masivo" value="1">
           <input type="hidden" name="curso" value="{{ curso_seleccionado.id }}">
-          <input type="hidden" name="fecha" value="{{ fecha_seleccionada }}">
-          <input type="hidden" name="hora_registro" value="{{ hora_seleccionada }}">
+          <input type="hidden" name="fecha" value="{{ fecha_seleccionada|date:'Y-m-d' }}">
+          <input type="hidden" name="hora_registro" value="{{ hora_seleccionada|time:'H:i:s' }}">
           
           <!-- Controles de selección masiva -->
           <div class="row mb-3">

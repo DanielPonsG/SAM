@@ -32,7 +32,9 @@ from smapp.views import (
     ver_horario_curso, api_horarios_cursos, editar_nota, eliminar_nota, agregar_nota_individual,
     ver_asistencia_profesor,
     # Nuevas vistas AJAX para gestión de asignaturas
-    gestionar_asignaturas_curso_ajax, obtener_asignaturas_curso_ajax
+    gestionar_asignaturas_curso_ajax, obtener_asignaturas_curso_ajax,
+    # Nueva vista para editar asistencia
+    editar_asistencia_alumno
 )
 
 # Importar las vistas temporales
@@ -97,6 +99,7 @@ urlpatterns = [
     # Gestión de Asistencia
     path('asistencia/alumno/registrar/', registrar_asistencia_alumno, name='registrar_asistencia_alumno'),
     path('asistencia/alumno/ver/', ver_asistencia_alumno, name='ver_asistencia_alumno'),
+    path('asistencia/alumno/editar/<int:asistencia_id>/', editar_asistencia_alumno, name='editar_asistencia_alumno'),
     path('asistencia/profesor/registrar/', registrar_asistencia_profesor, name='registrar_asistencia_profesor'),
     path('asistencia/profesor/ver/', ver_asistencia_profesor, name='ver_asistencia_profesor'),
     

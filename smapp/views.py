@@ -1527,14 +1527,413 @@ def asignar_asignaturas_curso(request):
 
 @login_required
 def registrar_asistencia_alumno(request):
-    """Vista para registrar asistencia de alumnos"""
-    context = {'user': request.user}
+    """Vista mejorada para registrar asistencia de alumnos con permisos y filtros"""
+    from .forms import RegistroMasivoAsistenciaForm
+    from django.contrib import messages
+    from django.utils import timezone
+    from datetime import date, datetime
+    
+    # Determinar tipo de usuario y obtener datos
+    user_type = None
+    profesor_actual = None
+    cursos_disponibles = Curso.objects.none()
+    
+    if hasattr(request.user, 'perfil'):
+        user_type = request.user.perfil.tipo_usuario
+        
+        if user_type in ['director', 'administrador']:
+            # Director y admin pueden ver todos los cursos
+            cursos_disponibles = Curso.objects.filter(anio=timezone.now().year).order_by('nivel', 'paralelo')
+        elif user_type == 'profesor':
+            try:
+                profesor_actual = request.user.profesor
+                # Profesor puede ver cursos donde es jefe o donde tiene asignaturas asignadas
+                cursos_jefe = profesor_actual.cursos_jefatura.filter(anio=timezone.now().year)
+                cursos_asignaturas = Curso.objects.filter(
+                    asignaturas__profesores_responsables=profesor_actual,
+                    anio=timezone.now().year
+                ).distinct()
+                # También incluir cursos donde el profesor tiene asignaturas con profesor_responsable (campo legacy)
+                cursos_legacy = Curso.objects.filter(
+                    asignaturas__profesor_responsable=profesor_actual,
+                    anio=timezone.now().year
+                ).distinct()
+                cursos_disponibles = (cursos_jefe | cursos_asignaturas | cursos_legacy).distinct().order_by('nivel', 'paralelo')
+            except:
+                messages.error(request, 'Error al obtener información del profesor.')
+                return render(request, 'registrar_asistencia_alumno.html', {'error': True})
+        else:
+            messages.error(request, 'No tienes permisos para registrar asistencia.')
+            return render(request, 'registrar_asistencia_alumno.html', {'error': True})
+    else:
+        messages.error(request, 'Usuario sin perfil definido.')
+        return render(request, 'registrar_asistencia_alumno.html', {'error': True})
+    
+    # Variables del contexto
+    mostrar_lista = False
+    curso_seleccionado = None
+    estudiantes = []
+    asignatura_seleccionada = None
+    fecha_seleccionada = timezone.now().date()
+    hora_seleccionada = timezone.now().time()
+    
+    if request.method == 'POST':
+        if 'registro_masivo' in request.POST:
+            # Procesar registro masivo de asistencia
+            curso_id = request.POST.get('curso')
+            fecha_str = request.POST.get('fecha')
+            hora_str = request.POST.get('hora_registro')
+            
+            try:
+                curso_seleccionado = get_object_or_404(Curso, id=curso_id)
+                
+                # Procesar fecha con múltiples formatos posibles
+                if fecha_str:
+                    # Intentar diferentes formatos de fecha
+                    formatos_fecha = ['%Y-%m-%d', '%d/%m/%Y', '%d-%m-%Y']
+                    fecha_seleccionada = None
+                    
+                    for formato in formatos_fecha:
+                        try:
+                            fecha_seleccionada = datetime.strptime(fecha_str, formato).date()
+                            break
+                        except ValueError:
+                            continue
+                    
+                    if fecha_seleccionada is None:
+                        # Si no se puede parsear la fecha, usar la fecha actual
+                        fecha_seleccionada = timezone.now().date()
+                        messages.warning(request, f'No se pudo interpretar la fecha "{fecha_str}". Se usará la fecha actual.')
+                else:
+                    fecha_seleccionada = timezone.now().date()
+                
+                # Procesar hora
+                if hora_str:
+                    try:
+                        hora_seleccionada = datetime.strptime(hora_str, '%H:%M:%S').time()
+                    except ValueError:
+                        try:
+                            hora_seleccionada = datetime.strptime(hora_str, '%H:%M').time()
+                        except ValueError:
+                            hora_seleccionada = timezone.now().time()
+                            messages.warning(request, f'No se pudo interpretar la hora "{hora_str}". Se usará la hora actual.')
+                else:
+                    hora_seleccionada = timezone.now().time()
+                
+                # Verificar permisos para este curso específico
+                if user_type not in ['director', 'administrador']:
+                    if profesor_actual and curso_seleccionado not in cursos_disponibles:
+                        messages.error(request, 'No tienes permisos para registrar asistencia en este curso.')
+                        return redirect('registrar_asistencia_alumno')
+                
+                # Obtener asignatura del profesor para este curso
+                if user_type in ['director', 'administrador']:
+                    asignatura_seleccionada = curso_seleccionado.asignaturas.first()
+                    if not asignatura_seleccionada:
+                        # Si no hay asignaturas, crear una genérica
+                        asignatura_seleccionada, created = Asignatura.objects.get_or_create(
+                            codigo_asignatura='ASIST',
+                            defaults={
+                                'nombre': 'Asistencia General',
+                                'descripcion': 'Asignatura para registro de asistencia general'
+                            }
+                        )
+                        curso_seleccionado.asignaturas.add(asignatura_seleccionada)
+                else:
+                    # Buscar asignatura del profesor
+                    asignatura_seleccionada = curso_seleccionado.asignaturas.filter(
+                        profesores_responsables=profesor_actual
+                    ).first()
+                    if not asignatura_seleccionada:
+                        asignatura_seleccionada = curso_seleccionado.asignaturas.filter(
+                            profesor_responsable=profesor_actual
+                        ).first()
+                
+                if not asignatura_seleccionada:
+                    messages.error(request, 'No se encontró una asignatura válida para registrar asistencia.')
+                    return redirect('registrar_asistencia_alumno')
+                
+                # Procesar cada estudiante
+                estudiantes_procesados = 0
+                for estudiante in curso_seleccionado.estudiantes.all():
+                    presente = request.POST.get(f'presente_{estudiante.id}') == 'on'
+                    observacion = request.POST.get(f'observacion_{estudiante.id}', '').strip()
+                    justificacion = request.POST.get(f'justificacion_{estudiante.id}', '').strip()
+                    
+                    # Crear o actualizar registro de asistencia
+                    asistencia, created = AsistenciaAlumno.objects.get_or_create(
+                        estudiante=estudiante,
+                        curso=curso_seleccionado,
+                        asignatura=asignatura_seleccionada,
+                        fecha=fecha_seleccionada,
+                        defaults={
+                            'presente': presente,
+                            'hora_registro': hora_seleccionada,
+                            'profesor_registro': profesor_actual,
+                            'observacion': observacion,
+                            'justificacion': justificacion if not presente else '',
+                        }
+                    )
+                    
+                    if not created:
+                        # Actualizar registro existente
+                        asistencia.presente = presente
+                        asistencia.observacion = observacion
+                        asistencia.justificacion = justificacion if not presente else ''
+                        asistencia.fecha_modificacion = timezone.now()
+                        asistencia.save()
+                    
+                    estudiantes_procesados += 1
+                
+                messages.success(
+                    request, 
+                    f'Asistencia registrada exitosamente para {estudiantes_procesados} estudiantes del curso {curso_seleccionado}.'
+                )
+                return redirect('ver_asistencia_alumno')
+                
+            except Exception as e:
+                messages.error(request, f'Error al procesar la asistencia: {str(e)}')
+                return redirect('registrar_asistencia_alumno')
+        
+        else:
+            # Selección de curso
+            form = RegistroMasivoAsistenciaForm(request.POST)
+            # Filtrar cursos disponibles según permisos
+            form.fields['curso'].queryset = cursos_disponibles
+            
+            if form.is_valid():
+                curso_seleccionado = form.cleaned_data['curso']
+                estudiantes = curso_seleccionado.estudiantes.all().order_by('primer_nombre', 'apellido_paterno')
+                
+                # Determinar asignatura del profesor para este curso
+                if user_type in ['director', 'administrador']:
+                    asignatura_seleccionada = curso_seleccionado.asignaturas.first()
+                    if not asignatura_seleccionada:
+                        # Si no hay asignaturas, crear una genérica
+                        asignatura_seleccionada, created = Asignatura.objects.get_or_create(
+                            codigo_asignatura='ASIST',
+                            defaults={
+                                'nombre': 'Asistencia General',
+                                'descripcion': 'Asignatura para registro de asistencia general'
+                            }
+                        )
+                        curso_seleccionado.asignaturas.add(asignatura_seleccionada)
+                else:
+                    # Buscar asignatura del profesor
+                    asignatura_seleccionada = curso_seleccionado.asignaturas.filter(
+                        profesores_responsables=profesor_actual
+                    ).first()
+                    if not asignatura_seleccionada:
+                        asignatura_seleccionada = curso_seleccionado.asignaturas.filter(
+                            profesor_responsable=profesor_actual
+                        ).first()
+                
+                if not asignatura_seleccionada:
+                    messages.error(request, 'No tienes asignaturas asignadas a este curso.')
+                    form = RegistroMasivoAsistenciaForm()
+                    form.fields['curso'].queryset = cursos_disponibles
+                else:
+                    mostrar_lista = True
+            else:
+                messages.error(request, 'Por favor selecciona un curso válido.')
+    else:
+        form = RegistroMasivoAsistenciaForm()
+        form.fields['curso'].queryset = cursos_disponibles
+    
+    
+    context = {
+        'form': form,
+        'mostrar_lista': mostrar_lista,
+        'curso_seleccionado': curso_seleccionado,
+        'estudiantes': estudiantes,
+        'asignatura_seleccionada': asignatura_seleccionada,
+        'fecha_seleccionada': fecha_seleccionada,
+        'hora_seleccionada': hora_seleccionada,
+        'profesor_actual': profesor_actual,
+        'user_type': user_type,
+        'cursos_disponibles': cursos_disponibles,
+    }
+    
     return render(request, 'registrar_asistencia_alumno.html', context)
 
 @login_required
 def ver_asistencia_alumno(request):
-    """Vista para ver asistencia de alumnos"""
-    context = {'user': request.user}
+    """Vista mejorada para ver asistencia de alumnos con filtros y permisos"""
+    from django.utils import timezone
+    from datetime import date, datetime, timedelta
+    from django.db.models import Q
+    from django.contrib import messages
+    
+    # Determinar tipo de usuario y permisos
+    user_type = None
+    estudiante_usuario = None
+    profesor_actual = None
+    cursos_disponibles = Curso.objects.none()
+    
+    if hasattr(request.user, 'perfil'):
+        user_type = request.user.perfil.tipo_usuario
+        
+        if user_type == 'alumno':
+            # Estudiante solo puede ver su propia asistencia
+            try:
+                estudiante_usuario = request.user.estudiante
+                # Obtener cursos del estudiante
+                cursos_disponibles = estudiante_usuario.cursos.filter(anio=timezone.now().year)
+            except:
+                messages.error(request, 'Error al obtener información del estudiante.')
+                return render(request, 'ver_asistencia_alumno.html', {'error': True})
+        elif user_type in ['director', 'administrador']:
+            # Director y admin pueden ver todos los cursos
+            cursos_disponibles = Curso.objects.filter(anio=timezone.now().year).order_by('nivel', 'paralelo')
+        elif user_type == 'profesor':
+            try:
+                profesor_actual = request.user.profesor
+                # Profesor puede ver cursos donde es jefe o donde tiene asignaturas
+                cursos_jefe = profesor_actual.cursos_jefatura.filter(anio=timezone.now().year)
+                cursos_asignaturas = Curso.objects.filter(
+                    asignaturas__profesores_responsables=profesor_actual,
+                    anio=timezone.now().year
+                ).distinct()
+                cursos_legacy = Curso.objects.filter(
+                    asignaturas__profesor_responsable=profesor_actual,
+                    anio=timezone.now().year
+                ).distinct()
+                cursos_disponibles = (cursos_jefe | cursos_asignaturas | cursos_legacy).distinct().order_by('nivel', 'paralelo')
+            except:
+                messages.error(request, 'Error al obtener información del profesor.')
+                return render(request, 'ver_asistencia_alumno.html', {'error': True})
+        else:
+            messages.error(request, 'No tienes permisos para ver asistencia.')
+            return render(request, 'ver_asistencia_alumno.html', {'error': True})
+    else:
+        messages.error(request, 'Usuario sin perfil definido.')
+        return render(request, 'ver_asistencia_alumno.html', {'error': True})
+    
+    # Filtros
+    curso_id = request.GET.get('curso')
+    estudiante_id = request.GET.get('estudiante')
+    rut_filtro = request.GET.get('rut', '').strip()
+    semana_str = request.GET.get('semana')
+    
+    # Variables para el contexto
+    curso_seleccionado = None
+    estudiante_seleccionado = None
+    estudiantes_curso = []
+    asistencias = AsistenciaAlumno.objects.none()
+    mensaje = ""
+    
+    # Configurar fecha de la semana
+    if semana_str:
+        try:
+            fecha_ref = datetime.strptime(semana_str, '%Y-%m-%d').date()
+        except:
+            fecha_ref = timezone.now().date()
+    else:
+        fecha_ref = timezone.now().date()
+    
+    # Calcular lunes y domingo de la semana
+    dias_desde_lunes = fecha_ref.weekday()
+    fecha_lunes = fecha_ref - timedelta(days=dias_desde_lunes)
+    fecha_domingo = fecha_lunes + timedelta(days=6)
+    semana_anterior = fecha_lunes - timedelta(days=7)
+    semana_siguiente = fecha_lunes + timedelta(days=7)
+    
+    # Generar info de la semana
+    fechas_semana = []
+    for i in range(7):
+        fecha_dia = fecha_lunes + timedelta(days=i)
+        fechas_semana.append({
+            'fecha': fecha_dia,
+            'dia_nombre': ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'][i],
+            'es_hoy': fecha_dia == timezone.now().date()
+        })
+    
+    # Procesar filtros
+    if curso_id:
+        try:
+            curso_seleccionado = get_object_or_404(Curso, id=curso_id)
+            # Verificar permisos para este curso
+            if curso_seleccionado not in cursos_disponibles:
+                messages.error(request, 'No tienes permisos para ver este curso.')
+                curso_seleccionado = None
+            else:
+                # Obtener estudiantes del curso
+                if user_type == 'alumno':
+                    # El estudiante solo se ve a sí mismo
+                    estudiantes_curso = [estudiante_usuario] if estudiante_usuario in curso_seleccionado.estudiantes.all() else []
+                else:
+                    estudiantes_curso = curso_seleccionado.estudiantes.all().order_by('primer_nombre', 'apellido_paterno')
+                
+                # Aplicar filtro por RUT si se especifica
+                if rut_filtro:
+                    estudiantes_curso = [e for e in estudiantes_curso if rut_filtro.lower() in e.numero_documento.lower()]
+                
+                # Filtro por estudiante específico
+                if estudiante_id and user_type != 'alumno':
+                    try:
+                        estudiante_seleccionado = get_object_or_404(Estudiante, id=estudiante_id)
+                        if estudiante_seleccionado in estudiantes_curso:
+                            estudiantes_filtro = [estudiante_seleccionado]
+                        else:
+                            estudiantes_filtro = []
+                            messages.warning(request, 'El estudiante seleccionado no pertenece al curso.')
+                    except:
+                        estudiantes_filtro = estudiantes_curso
+                else:
+                    if user_type == 'alumno':
+                        estudiantes_filtro = [estudiante_usuario]
+                        estudiante_seleccionado = estudiante_usuario
+                    else:
+                        estudiantes_filtro = estudiantes_curso
+                
+                # Obtener asistencias de la semana
+                if estudiantes_filtro:
+                    asistencias = AsistenciaAlumno.objects.filter(
+                        estudiante__in=estudiantes_filtro,
+                        curso=curso_seleccionado,
+                        fecha__range=[fecha_lunes, fecha_domingo]
+                    ).select_related('estudiante', 'asignatura', 'profesor_registro').order_by('fecha', 'estudiante__primer_nombre')
+                
+        except:
+            messages.error(request, 'Curso no encontrado.')
+    
+    # Calcular estadísticas
+    estadisticas = {
+        'total': asistencias.count(),
+        'presentes': asistencias.filter(presente=True).count(),
+        'ausentes': asistencias.filter(presente=False).count(),
+        'porcentaje_asistencia': 0
+    }
+    
+    if estadisticas['total'] > 0:
+        estadisticas['porcentaje_asistencia'] = round((estadisticas['presentes'] / estadisticas['total']) * 100, 1)
+    
+    # Mensaje si no hay curso seleccionado
+    if not curso_seleccionado:
+        if user_type == 'alumno':
+            mensaje = "Selecciona uno de tus cursos para ver tu asistencia"
+        else:
+            mensaje = "Selecciona un curso para ver la asistencia de los estudiantes"
+    
+    context = {
+        'cursos_disponibles': cursos_disponibles,
+        'curso_seleccionado': curso_seleccionado,
+        'estudiante_seleccionado': estudiante_seleccionado,
+        'estudiantes_curso': estudiantes_curso,
+        'asistencias': asistencias,
+        'estadisticas': estadisticas,
+        'fecha_lunes': fecha_lunes,
+        'fecha_domingo': fecha_domingo,
+        'fechas_semana': fechas_semana,
+        'semana_anterior': semana_anterior,
+        'semana_siguiente': semana_siguiente,
+        'user_type': user_type,
+        'estudiante_usuario': estudiante_usuario,
+        'mensaje': mensaje,
+        'rut_filtro': rut_filtro,
+        'anio_actual': timezone.now().year,
+    }
+    
     return render(request, 'ver_asistencia_alumno.html', context)
 
 @login_required
@@ -2187,86 +2586,66 @@ def obtener_asignaturas_curso_ajax(request, curso_id):
         return JsonResponse({'success': False, 'error': f'Error: {str(e)}'})
 
 @login_required
-def gestionar_asignaturas_curso_ajax(request):
-    """Vista AJAX para gestionar asignaturas de un curso (asignar/desasignar)"""
-    if request.method != 'POST':
-        return JsonResponse({'success': False, 'error': 'Método no permitido'})
+def editar_asistencia_alumno(request, asistencia_id):
+    """Vista para editar un registro individual de asistencia"""
+    from .forms import AsistenciaAlumnoForm
+    from django.contrib import messages
+    
+    # Obtener el registro de asistencia
+    asistencia = get_object_or_404(AsistenciaAlumno, id=asistencia_id)
     
     # Verificar permisos
-    if not (hasattr(request.user, 'perfil') and 
-            request.user.perfil.tipo_usuario in ['director', 'administrador', 'profesor_jefe']):
-        return JsonResponse({'success': False, 'error': 'No tienes permisos para gestionar asignaturas'})
+    user_type = None
+    if hasattr(request.user, 'perfil'):
+        user_type = request.user.perfil.tipo_usuario
+        
+        if user_type == 'alumno':
+            # Estudiante no puede editar asistencia
+            messages.error(request, 'No tienes permisos para editar registros de asistencia.')
+            return redirect('ver_asistencia_alumno')
+        elif user_type == 'profesor':
+            try:
+                profesor_actual = request.user.profesor
+                # Profesor solo puede editar si es jefe del curso o responsable de la asignatura
+                puede_editar = (
+                    asistencia.curso.profesor_jefe == profesor_actual or
+                    asistencia.asignatura.profesores_responsables.filter(id=profesor_actual.id).exists() or
+                    asistencia.asignatura.profesor_responsable == profesor_actual
+                )
+                if not puede_editar:
+                    messages.error(request, 'No tienes permisos para editar este registro de asistencia.')
+                    return redirect('ver_asistencia_alumno')
+            except:
+                messages.error(request, 'Error al verificar permisos.')
+                return redirect('ver_asistencia_alumno')
+        elif user_type not in ['director', 'administrador']:
+            messages.error(request, 'No tienes permisos para editar registros de asistencia.')
+            return redirect('ver_asistencia_alumno')
+    else:
+        messages.error(request, 'Usuario sin perfil definido.')
+        return redirect('ver_asistencia_alumno')
     
-    try:
-        data = json.loads(request.body)
-        curso_id = data.get('curso_id')
-        asignatura_id = data.get('asignatura_id')
-        accion = data.get('accion')  # 'asignar' o 'desasignar'
-        
-        if not all([curso_id, asignatura_id, accion]):
-            return JsonResponse({'success': False, 'error': 'Datos incompletos'})
-        
-        curso = get_object_or_404(Curso, id=curso_id)
-        asignatura = get_object_or_404(Asignatura, id=asignatura_id)
-        
-        if accion == 'asignar':
-            curso.asignaturas.add(asignatura)
-            mensaje = f'Asignatura {asignatura.nombre} asignada al curso {curso.get_nivel_display()}{curso.paralelo}'
-        elif accion == 'desasignar':
-            curso.asignaturas.remove(asignatura)
-            mensaje = f'Asignatura {asignatura.nombre} removida del curso {curso.get_nivel_display()}{curso.paralelo}'
+    if request.method == 'POST':
+        form = AsistenciaAlumnoForm(request.POST, instance=asistencia)
+        if form.is_valid():
+            asistencia_actualizada = form.save(commit=False)
+            asistencia_actualizada.fecha_modificacion = timezone.now()
+            asistencia_actualizada.save()
+            
+            messages.success(
+                request, 
+                f'Asistencia actualizada para {asistencia.estudiante.get_nombre_completo()} - {asistencia.fecha.strftime("%d/%m/%Y")}'
+            )
+            return redirect('ver_asistencia_alumno')
         else:
-            return JsonResponse({'success': False, 'error': 'Acción no válida'})
-        
-        # Calcular estadísticas actualizadas
-        cursos_queryset = Curso.objects.filter(anio=timezone.now().year)
-        total_asignaturas_asignadas = sum(curso.asignaturas.count() for curso in cursos_queryset)
-        asignaturas_curso_actual = curso.asignaturas.count()
-        
-        return JsonResponse({
-            'success': True, 
-            'mensaje': mensaje,
-            'asignaturas_curso': asignaturas_curso_actual,
-            'total_asignaturas_asignadas': total_asignaturas_asignadas
-        })
-        
-    except json.JSONDecodeError:
-        return JsonResponse({'success': False, 'error': 'Error en el formato de datos'})
-    except Exception as e:
-        return JsonResponse({'success': False, 'error': f'Error interno: {str(e)}'})
-
-@login_required
-def obtener_asignaturas_curso_ajax(request, curso_id):
-    """Vista AJAX para obtener las asignaturas de un curso específico"""
-    try:
-        curso = get_object_or_404(Curso, id=curso_id)
-        asignaturas_asignadas = curso.asignaturas.all()
-        asignaturas_disponibles = Asignatura.objects.exclude(id__in=asignaturas_asignadas.values_list('id', flat=True))
-        
-        data = {
-            'curso': {
-                'id': curso.id,
-                'nombre': f"{curso.get_nivel_display()}{curso.paralelo}",
-                'nivel_display': curso.get_nivel_display(),
-                'paralelo': curso.paralelo
-            },
-            'asignaturas_asignadas': [
-                {
-                    'id': asig.id,
-                    'nombre': asig.nombre,
-                    'codigo': asig.codigo_asignatura
-                } for asig in asignaturas_asignadas
-            ],
-            'asignaturas_disponibles': [
-                {
-                    'id': asig.id,
-                    'nombre': asig.nombre,
-                    'codigo': asig.codigo_asignatura
-                } for asig in asignaturas_disponibles
-            ]
-        }
-        
-        return JsonResponse({'success': True, 'data': data})
-        
-    except Exception as e:
-        return JsonResponse({'success': False, 'error': f'Error: {str(e)}'})
+            messages.error(request, 'Por favor corrige los errores en el formulario.')
+    else:
+        form = AsistenciaAlumnoForm(instance=asistencia)
+    
+    context = {
+        'form': form,
+        'asistencia': asistencia,
+        'titulo': f'Editar Asistencia - {asistencia.estudiante.get_nombre_completo()}',
+    }
+    
+    return render(request, 'editar_asistencia_alumno.html', context)
